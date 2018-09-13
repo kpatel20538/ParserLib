@@ -18,7 +18,9 @@ public abstract class Result<T, Strm extends ParserStream<Strm,?,?>> {
     public abstract <U> Result<U, Strm> mapFailure(Supplier<String> transform);
     public abstract <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> transform);
     public abstract <U> Result<U, Strm> chainFailure(Supplier<Result<U, Strm>> transform);
-    public abstract void raiseIfFailure();
+
+    public abstract T getOrThrow();
+    public abstract T getOrElse(Supplier<T> otherwise);
 }
 
 class Success<T, Strm extends ParserStream<Strm,?,?>> extends Result<T, Strm> {
@@ -54,10 +56,13 @@ class Success<T, Strm extends ParserStream<Strm,?,?>> extends Result<T, Strm> {
         return null;
     }
 
-    public void raiseIfFailure() {
-
+    public T getOrThrow() {
+        return null;
     }
 
+    public T getOrElse(Supplier<T> otherwise) {
+        return null;
+    }
 }
 
 class Failure<T, Strm extends ParserStream<Strm,?,?>> extends Result<T, Strm> {
@@ -87,7 +92,11 @@ class Failure<T, Strm extends ParserStream<Strm,?,?>> extends Result<T, Strm> {
         return null;
     }
 
-    public void raiseIfFailure() {
+    public T getOrThrow() {
+        return null;
+    }
 
+    public T getOrElse(Supplier<T> otherwise) {
+        return null;
     }
 }

@@ -5,6 +5,19 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 public class ListStreamParser<Tkn> implements ParserStream<ListStreamParser<Tkn>, List<Tkn>, Tkn> {
+    private final List<Tkn> stream;
+    private final int position;
+
+    public ListStreamParser(List<Tkn> stream) {
+        this.stream = stream;
+        this.position = 0;
+    }
+
+    private ListStreamParser(List<Tkn> stream, int position) {
+        this.stream = stream;
+        this.position = position;
+    }
+
     @Override
     public Optional<Tkn> getLeadingItem() {
         return Optional.empty();
