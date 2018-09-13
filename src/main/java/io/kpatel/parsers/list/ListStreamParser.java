@@ -1,4 +1,6 @@
-package io.kpatel.parsers;
+package io.kpatel.parsers.list;
+
+import io.kpatel.parsers.ParserStream;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +37,11 @@ public class ListStreamParser<Tkn> implements ParserStream<ListStreamParser<Tkn>
 
     @Override
     public ListStreamParser<Tkn> jump(int n) {
+        return null;
+    }
+
+    @Override
+    public String getErrorHeader() {
         return null;
     }
 }

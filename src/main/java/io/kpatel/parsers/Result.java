@@ -10,13 +10,14 @@ public abstract class Result<T, Strm extends ParserStream<Strm,?,?>> {
         return new Success<>(result, remaining);
     }
 
-    public static <T, Strm extends ParserStream<Strm,?,?>> Result<T, Strm> failure(String errorMessage){
-        return new Failure<>(errorMessage);
+    public static <T, Strm extends ParserStream<Strm, ?, ?>> Result<T, Strm> failure(String errorMessage, Strm remaining) {
+        return new Failure<>(errorMessage, remaining);
     }
 
     public abstract <U> Result<U, Strm> map(BiFunction<T, Strm, U> mapper);
     public abstract <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> flatMapper);
-    public abstract Result<T, Strm> orElse(Supplier<Result<T, Strm>> transform);
+
+    public abstract Result<T, Strm> orElse(Supplier<Result<T, Strm>> alternative);
 
     public abstract T getOrThrow();
     public abstract T getOrElse(Supplier<T> otherwise);
@@ -48,7 +49,7 @@ class Success<T, Strm extends ParserStream<Strm,?,?>> extends Result<T, Strm> {
         return transform.apply(getResult(), getRemaining());
     }
 
-    public Result<T, Strm> orElse(Supplier<Result<T, Strm>> transform) {
+    public Result<T, Strm> orElse(Supplier<Result<T, Strm>> alternative) {
         return this;
     }
 
@@ -63,29 +64,36 @@ class Success<T, Strm extends ParserStream<Strm,?,?>> extends Result<T, Strm> {
 
 class Failure<T, Strm extends ParserStream<Strm,?,?>> extends Result<T, Strm> {
     private final String errorMessage;
+    private final Strm remaining;
 
-    Failure(String errorMessage) {
+    Failure(String errorMessage, Strm remaining) {
         this.errorMessage = errorMessage;
+        this.remaining = remaining;
     }
 
     public String getErrorMessage() {
         return errorMessage;
     }
 
+    public Strm getRemaining() {
+        return remaining;
+    }
+
     public <U> Result<U, Strm> map(BiFunction<T, Strm, U> transform) {
-        return Result.failure(getErrorMessage());
+        return Result.failure(getErrorMessage(), getRemaining());
     }
 
     public <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> transform) {
-        return Result.failure(getErrorMessage());
+        return Result.failure(getErrorMessage(), getRemaining());
     }
 
-    public Result<T, Strm> orElse(Supplier<Result<T, Strm>> transform) {
-        return transform.get();
+    public Result<T, Strm> orElse(Supplier<Result<T, Strm>> alternative) {
+        return alternative.get();
     }
 
     public T getOrThrow() {
-        throw new ParserError(getErrorMessage());
+        throw new ParserError(String.format("[%s] : %s",
+                getRemaining().getErrorHeader(), getErrorMessage()));
     }
 
     public T getOrElse(Supplier<T> otherwise) {

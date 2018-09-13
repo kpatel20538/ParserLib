@@ -1,4 +1,6 @@
-package io.kpatel.parsers;
+package io.kpatel.parsers.string;
+
+import io.kpatel.parsers.ParserStream;
 
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -22,7 +24,6 @@ public class StringParserStream implements ParserStream<StringParserStream, Stri
         this.lineNumber = lineNumber;
         this.columnNumber = columnNumber;
     }
-
 
     @Override
     public Optional<Character> getLeadingItem() {
@@ -50,5 +51,9 @@ public class StringParserStream implements ParserStream<StringParserStream, Stri
 
     public int getColumnNumber() {
         return columnNumber;
+    }
+
+    public String getErrorHeader() {
+        return String.format("(Line: %d, Col: %d)", getLineNumber(), getColumnNumber());
     }
 }
