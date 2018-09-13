@@ -4,20 +4,19 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 public abstract class Result<T, Strm extends ParserStream<Strm,?,?>> {
-    protected Result() {}
+    Result() {}
 
     public static <T, Strm extends ParserStream<Strm,?,?>> Result<T, Strm> success(T result, Strm remaining){
-        return null;
+        return new Success<>(result, remaining);
     }
 
-    public static <T, Strm extends ParserStream<Strm,?,?>> Result<T, Strm> failure(String msg){
-        return null;
+    public static <T, Strm extends ParserStream<Strm,?,?>> Result<T, Strm> failure(String errorMessage){
+        return new Failure<>(errorMessage);
     }
 
-    public abstract <U> Result<U, Strm> map(BiFunction<T, Strm, U> transform);
-    public abstract <U> Result<U, Strm> mapFailure(Supplier<String> transform);
-    public abstract <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> transform);
-    public abstract <U> Result<U, Strm> chainFailure(Supplier<Result<U, Strm>> transform);
+    public abstract <U> Result<U, Strm> map(BiFunction<T, Strm, U> mapper);
+    public abstract <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> flatMapper);
+    public abstract Result<T, Strm> orElse(Supplier<Result<T, Strm>> transform);
 
     public abstract T getOrThrow();
     public abstract T getOrElse(Supplier<T> otherwise);
@@ -41,27 +40,24 @@ class Success<T, Strm extends ParserStream<Strm,?,?>> extends Result<T, Strm> {
     }
 
     public <U> Result<U, Strm> map(BiFunction<T, Strm, U> transform) {
-        return null;
+        U newResult = transform.apply(getResult(), getRemaining());
+        return Result.success(newResult, getRemaining());
     }
 
-    public <U> Result<U, Strm> mapFailure(Supplier<String> transform) {
-        return null;
+    public <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> transform) {
+        return transform.apply(getResult(), getRemaining());
     }
 
-    public <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> transform){
-        return null;
-    }
-
-    public <U> Result<U, Strm> chainFailure(Supplier<Result<U, Strm>> transform){
-        return null;
+    public Result<T, Strm> orElse(Supplier<Result<T, Strm>> transform) {
+        return this;
     }
 
     public T getOrThrow() {
-        return null;
+        return getResult();
     }
 
     public T getOrElse(Supplier<T> otherwise) {
-        return null;
+        return getResult();
     }
 }
 
@@ -77,26 +73,22 @@ class Failure<T, Strm extends ParserStream<Strm,?,?>> extends Result<T, Strm> {
     }
 
     public <U> Result<U, Strm> map(BiFunction<T, Strm, U> transform) {
-        return null;
+        return Result.failure(getErrorMessage());
     }
 
-    public <U> Result<U, Strm> mapFailure(Supplier<String> transform) {
-        return null;
+    public <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> transform) {
+        return Result.failure(getErrorMessage());
     }
 
-    public <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> transform){
-        return null;
-    }
-
-    public <U> Result<U, Strm> chainFailure(Supplier<Result<U, Strm>> transform){
-        return null;
+    public Result<T, Strm> orElse(Supplier<Result<T, Strm>> transform) {
+        return transform.get();
     }
 
     public T getOrThrow() {
-        return null;
+        throw new ParserError(getErrorMessage());
     }
 
     public T getOrElse(Supplier<T> otherwise) {
-        return null;
+        return otherwise.get();
     }
 }
