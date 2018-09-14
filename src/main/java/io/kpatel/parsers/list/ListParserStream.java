@@ -10,7 +10,7 @@ import java.util.function.Predicate;
 /**
  * WHY: Specialize ParserStream for Stream
  */
-public class ListParserStream<Tkn> implements ParserStream<ListParserStream<Tkn>, List<Tkn>, Tkn> {
+public class ListParserStream<Tkn> implements ParserStream<List<Tkn>, Tkn> {
     private final List<Tkn> stream;
     private final int position;
 
@@ -55,7 +55,7 @@ public class ListParserStream<Tkn> implements ParserStream<ListParserStream<Tkn>
     }
 
     @Override
-    public ListParserStream<Tkn> jump(int n) {
+    public ParserStream<List<Tkn>, Tkn> jump(int n) {
         if (0 < n) {
             return new ListParserStream<>(stream, position + n);
         }

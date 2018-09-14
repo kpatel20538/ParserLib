@@ -15,7 +15,7 @@ import java.util.function.Supplier;
  * - Static Factory Methods
  * - Visitor Pattern
  */
-public abstract class Result<T, Strm extends ParserStream<Strm, ?, ?>> {
+public abstract class Result<T, Strm extends ParserStream<?, ?>> {
     /**
      * WHAT: A package-private constructor of an abstract class to ensure a closed
      * inheritance hierarchy and no base class instances.
@@ -28,7 +28,7 @@ public abstract class Result<T, Strm extends ParserStream<Strm, ?, ?>> {
      * WHAT: Factory Operation for Success Case
      * WHY: Only source for pure Success Case
      */
-    public static <T, Strm extends ParserStream<Strm, ?, ?>> Result<T, Strm> success(T result, Strm remaining) {
+    public static <T, Strm extends ParserStream<?, ?>> Result<T, Strm> success(T result, Strm remaining) {
         return new Success<>(result, remaining);
     }
 
@@ -36,7 +36,7 @@ public abstract class Result<T, Strm extends ParserStream<Strm, ?, ?>> {
      * WHAT: Factory Operation for Failure Case
      * WHY: Only source for pure Failure Case
      */
-    public static <T, Strm extends ParserStream<Strm, ?, ?>> Result<T, Strm> failure(String errorMessage, Strm remaining) {
+    public static <T, Strm extends ParserStream<?, ?>> Result<T, Strm> failure(String errorMessage, Strm remaining) {
         return new Failure<>(errorMessage, remaining);
     }
 
@@ -87,7 +87,7 @@ public abstract class Result<T, Strm extends ParserStream<Strm, ?, ?>> {
 }
 
 
-final class Success<T, Strm extends ParserStream<Strm, ?, ?>> extends Result<T, Strm> {
+final class Success<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> {
     /**
      * WHY: Storage for actual value
      */
@@ -175,7 +175,7 @@ final class Success<T, Strm extends ParserStream<Strm, ?, ?>> extends Result<T, 
     }
 }
 
-final class Failure<T, Strm extends ParserStream<Strm, ?, ?>> extends Result<T, Strm> {
+final class Failure<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> {
     /**
      * WHY: Explanation of Error
      */

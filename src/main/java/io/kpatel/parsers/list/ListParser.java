@@ -10,7 +10,7 @@ import static io.kpatel.parsers.list.ListParsers.withPostfix;
 /**
  * WHAT: Specialized Parser Interface for Strings
  */
-public interface ListParser<T, Tkn> extends Parser<T, ListParserStream<Tkn>, List<Tkn>, Tkn> {
+public interface ListParser<T, Tkn> extends Parser<T, List<Tkn>, Tkn> {
     /**
      * WHAT: Helper Function to parse a full string
      */

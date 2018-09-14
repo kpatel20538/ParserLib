@@ -1,5 +1,6 @@
 package io.kpatel.parsers.string;
 
+import io.kpatel.parsers.ParserError;
 import io.kpatel.parsers.Result;
 import org.junit.Test;
 
@@ -52,7 +53,7 @@ public class StringParsersAlternateTest {
         assertEquals("Foobar", item);
     }
 
-    @Test
+    @Test(expected = ParserError.class)
     public void testAlternateFailed() {
         StringParserStream stream = new StringParserStream("Alpha Hello World Foobar");
         StringParser<String> parser = alternate(Arrays.asList(
@@ -61,8 +62,6 @@ public class StringParsersAlternateTest {
                 string("Foobar")));
         Result<String, ?> result = parser.parse(stream);
 
-        String item = result.getOrThrow();
-
-        assertEquals("Hello", item);
+        result.getOrThrow();
     }
 }

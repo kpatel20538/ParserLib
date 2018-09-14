@@ -8,7 +8,7 @@ import java.util.function.Predicate;
 /**
  * WHY: Specialize ParserStream for Stream
  */
-public class StringParserStream implements ParserStream<StringParserStream, String, Character> {
+public class StringParserStream implements ParserStream<String, Character> {
     private final String stream;
     private final int position;
     private final int lineNumber;
@@ -59,7 +59,7 @@ public class StringParserStream implements ParserStream<StringParserStream, Stri
     }
 
     @Override
-    public StringParserStream jump(int n) {
+    public ParserStream<String, Character> jump(int n) {
         if (0 < n) {
             String stage = getLeadingSequence(n);
             int lineCount = 0;

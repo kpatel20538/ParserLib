@@ -1,5 +1,6 @@
 package io.kpatel.parsers.list;
 
+import io.kpatel.parsers.ParserStream;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -13,7 +14,7 @@ import static org.junit.Assert.*;
 public class ListParserStreamTest {
     @Test
     public void testLeadingItemPresent() {
-        ListParserStream<Token> stream = new ListParserStream<>(Arrays.asList(
+        ParserStream<List<Token>, Token> stream = new ListParserStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O));
 
         Optional<Token> token = stream.getLeadingItem();
@@ -24,7 +25,7 @@ public class ListParserStreamTest {
 
     @Test
     public void testLeadingItemEmpty() {
-        ListParserStream<Token> stream = new ListParserStream<>(
+        ParserStream<List<Token>, Token> stream = new ListParserStream<>(
                 Collections.emptyList());
 
         Optional<Token> token = stream.getLeadingItem();
@@ -34,7 +35,7 @@ public class ListParserStreamTest {
 
     @Test
     public void testNonEmptyStream() {
-        ListParserStream<Token> stream = new ListParserStream<>(Arrays.asList(
+        ParserStream<List<Token>, Token> stream = new ListParserStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O));
 
         assertFalse(stream.atEndOfStream());
@@ -42,7 +43,7 @@ public class ListParserStreamTest {
 
     @Test
     public void testEmptyStream() {
-        ListParserStream<Token> stream = new ListParserStream<>(
+        ParserStream<List<Token>, Token> stream = new ListParserStream<>(
                 Collections.emptyList());
 
         assertTrue(stream.atEndOfStream());
@@ -50,7 +51,7 @@ public class ListParserStreamTest {
 
     @Test
     public void testLeadingSequence() {
-        ListParserStream<Token> stream = new ListParserStream<>(Arrays.asList(
+        ParserStream<List<Token>, Token> stream = new ListParserStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
 
@@ -63,7 +64,7 @@ public class ListParserStreamTest {
 
     @Test
     public void testLargeLeadingSequence() {
-        ListParserStream<Token> stream = new ListParserStream<>(
+        ParserStream<List<Token>, Token> stream = new ListParserStream<>(
                 Arrays.asList(
                         Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                         Token.W, Token.O, Token.R, Token.L, Token.D));
@@ -78,7 +79,7 @@ public class ListParserStreamTest {
 
     @Test
     public void testNegativeLeadingSequence() {
-        ListParserStream<Token> stream = new ListParserStream<>(Arrays.asList(
+        ParserStream<List<Token>, Token> stream = new ListParserStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
 
@@ -89,7 +90,7 @@ public class ListParserStreamTest {
 
     @Test
     public void testLeadingRun() {
-        ListParserStream<Token> stream = new ListParserStream<>(Arrays.asList(
+        ParserStream<List<Token>, Token> stream = new ListParserStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
 
@@ -102,7 +103,7 @@ public class ListParserStreamTest {
 
     @Test
     public void testEmptyLeadingRun() {
-        ListParserStream<Token> stream = new ListParserStream<>(Arrays.asList(
+        ParserStream<List<Token>, Token> stream = new ListParserStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
         Predicate<Token> flagPredicate = Token::isFlag;
@@ -114,7 +115,7 @@ public class ListParserStreamTest {
 
     @Test
     public void testLeadingRunOnEmptyStream() {
-        ListParserStream<Token> stream = new ListParserStream<>(
+        ParserStream<List<Token>, Token> stream = new ListParserStream<>(
                 Collections.emptyList());
 
         List<Token> run = stream.getLeadingRun(Token::isFlag);
@@ -124,10 +125,10 @@ public class ListParserStreamTest {
 
     @Test
     public void testJump() {
-        ListParserStream<Token> stream1 = new ListParserStream<>(Arrays.asList(
+        ParserStream<List<Token>, Token> stream1 = new ListParserStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
-        ListParserStream<Token> stream2 = stream1.jump(6);
+        ParserStream<List<Token>, Token> stream2 = stream1.jump(6);
 
         Optional<Token> leading1 = stream1.getLeadingItem();
         Optional<Token> leading2 = stream2.getLeadingItem();
@@ -139,11 +140,11 @@ public class ListParserStreamTest {
 
     @Test
     public void testLargeJump() {
-        ListParserStream<Token> stream1 = new ListParserStream<>(Arrays.asList(
+        ParserStream<List<Token>, Token> stream1 = new ListParserStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
 
-        ListParserStream<Token> stream2 = stream1.jump(100);
+        ParserStream<List<Token>, Token> stream2 = stream1.jump(100);
 
         Optional<Token> leading1 = stream1.getLeadingItem();
         assertTrue(leading1.isPresent());
@@ -153,11 +154,11 @@ public class ListParserStreamTest {
 
     @Test
     public void testNegativeJump() {
-        ListParserStream<Token> stream1 = new ListParserStream<>(Arrays.asList(
+        ParserStream<List<Token>, Token> stream1 = new ListParserStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
 
-        ListParserStream<Token> stream2 = stream1.jump(-100);
+        ParserStream<List<Token>, Token> stream2 = stream1.jump(-100);
 
         Optional<Token> leading1 = stream1.getLeadingItem();
         Optional<Token> leading2 = stream2.getLeadingItem();

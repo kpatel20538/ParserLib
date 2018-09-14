@@ -16,12 +16,12 @@ import java.util.function.Supplier;
  * - ParserStream, A Generalization of Immutable Linear Structures
  */
 @FunctionalInterface
-public interface Parser<T, Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm> {
+public interface Parser<T, Seq, Itm> {
     /**
      * WHAT: A SAM Interface
      * WHY: Make use of Lambda Expressions for Simple Construction
      */
-    Result<T, Strm> parse(Strm stream);
+    Result<T, ParserStream<Seq, Itm>> parse(ParserStream<Seq, Itm> stream);
 
     /**
      * WHAT: Deferring to Result object
@@ -30,7 +30,7 @@ public interface Parser<T, Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm> 
      *
      * @see Result#map
      */
-    default <U> Parser<U, Strm, Seq, Itm> map(Function<T, U> mapper) {
+    default <U> Parser<U, Seq, Itm> map(Function<T, U> mapper) {
         return stream -> parse(stream).chain((t, remaining) -> Result.success(mapper.apply(t), remaining));
     }
 
@@ -41,7 +41,7 @@ public interface Parser<T, Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm> 
      *
      * @see Result#chain
      */
-    default <U> Parser<U, Strm, Seq, Itm> chain(Function<T, Parser<U, Strm, Seq, Itm>> flatMapper) {
+    default <U> Parser<U, Seq, Itm> chain(Function<T, Parser<U, Seq, Itm>> flatMapper) {
         return stream -> parse(stream).chain((t, remaining) -> flatMapper.apply(t).parse(remaining));
     }
 
@@ -52,7 +52,7 @@ public interface Parser<T, Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm> 
      *
      * @see Result#orElse
      */
-    default Parser<T, Strm, Seq, Itm> orElse(Supplier<Parser<T, Strm, Seq, Itm>> alternative) {
+    default Parser<T, Seq, Itm> orElse(Supplier<Parser<T, Seq, Itm>> alternative) {
         return stream -> parse(stream).orElse(() -> alternative.get().parse(stream));
     }
 }

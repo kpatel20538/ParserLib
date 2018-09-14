@@ -37,7 +37,7 @@ public final class StringParsers {
      * @see Parsers#endOfStream
      */
     public static StringParser<Void> endOfStream() {
-        return Parsers.<StringParserStream, String, Character>
+        return Parsers.<String, Character>
                 endOfStream()::parse;
     }
 
@@ -302,7 +302,7 @@ public final class StringParsers {
     public static StringParser<Character> character(
             Predicate<Character> predicate,
             Supplier<String> errorMessage) {
-        return Parsers.<StringParserStream, String, Character>terminalItem(predicate, errorMessage)::parse;
+        return Parsers.<String, Character>terminalItem(predicate, errorMessage)::parse;
     }
 
     /**
@@ -331,7 +331,7 @@ public final class StringParsers {
      * @see Parsers#terminalSequence(Object, Function, Supplier)
      */
     public static StringParser<String> string(String sequence) {
-        return Parsers.<StringParserStream, String, Character>
+        return Parsers.<String, Character>
                 terminalSequence(sequence, String::length, () -> String.format("Cannot Find String %s", sequence))
                 ::parse;
     }
@@ -340,8 +340,7 @@ public final class StringParsers {
      * WHAT: Parse a run of characters that satisfy a given predicate, Will always succeed
      */
     public static StringParser<String> run(Predicate<Character> predicate) {
-        return Parsers.<StringParserStream, String, Character>
-                terminalRun(predicate, String::length)::parse;
+        return Parsers.terminalRun(predicate, String::length)::parse;
     }
 
     /**

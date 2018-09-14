@@ -18,7 +18,7 @@ import java.util.function.Predicate;
  * CONSIDER:
  * - Deferring ParserStream::getLeadingSequence and ParserStream::getLeadingRun to StringParserStream
  */
-public interface ParserStream<Self, Seq, Itm> {
+public interface ParserStream<Seq, Itm> {
     /**
      * WHY: Non Destructive Query Operation for Items
      */
@@ -44,7 +44,7 @@ public interface ParserStream<Self, Seq, Itm> {
     /**
      * WHY: Forward Seek, Needs to Self-Recurring Generics to Preserve Extensibility
      */
-    Self jump(int n);
+    ParserStream<Seq, Itm> jump(int n);
 
     /**
      * WHY: Provide Context When  an Error Occurs

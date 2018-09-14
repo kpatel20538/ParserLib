@@ -1,5 +1,6 @@
 package io.kpatel.parsers.string;
 
+import io.kpatel.parsers.ParserStream;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -98,7 +99,7 @@ public class StringParserStreamTest {
     public void testJump() {
         StringParserStream stream1 = new StringParserStream("Hello World");
 
-        StringParserStream stream2 = stream1.jump(6);
+        ParserStream<String, Character> stream2 = stream1.jump(6);
 
         Optional<Character> leading1 = stream1.getLeadingItem();
         Optional<Character> leading2 = stream2.getLeadingItem();
@@ -112,7 +113,7 @@ public class StringParserStreamTest {
     public void testLargeJump() {
         StringParserStream stream1 = new StringParserStream("Hello World");
 
-        StringParserStream stream2 = stream1.jump(100);
+        ParserStream<String, Character> stream2 = stream1.jump(100);
 
         Optional<Character> leading1 = stream1.getLeadingItem();
         assertTrue(leading1.isPresent());
@@ -124,7 +125,7 @@ public class StringParserStreamTest {
     public void testNegativeJump() {
         StringParserStream stream1 = new StringParserStream("Hello World");
 
-        StringParserStream stream2 = stream1.jump(-100);
+        ParserStream<String, Character> stream2 = stream1.jump(-100);
 
         Optional<Character> leading1 = stream1.getLeadingItem();
         Optional<Character> leading2 = stream2.getLeadingItem();
@@ -138,7 +139,7 @@ public class StringParserStreamTest {
     public void testColumnJump() {
         StringParserStream stream1 = new StringParserStream("Hello World");
 
-        StringParserStream stream2 = stream1.jump(6);
+        StringParserStream stream2 = (StringParserStream) stream1.jump(6);
 
         assertEquals(0, stream1.getColumnNumber());
         assertEquals(6, stream2.getColumnNumber());
@@ -148,7 +149,7 @@ public class StringParserStreamTest {
     public void testLineColumnJump() {
         StringParserStream stream1 = new StringParserStream("Hello\nWorld\nFoobar");
 
-        StringParserStream stream2 = stream1.jump(100);
+        StringParserStream stream2 = (StringParserStream) stream1.jump(100);
 
         assertEquals(1, stream1.getLineNumber());
         assertEquals(0, stream1.getColumnNumber());
