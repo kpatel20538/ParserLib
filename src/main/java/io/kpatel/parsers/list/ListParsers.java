@@ -19,7 +19,7 @@ public final class ListParsers {
      *  @see Parsers#endOfStream
      */
     public static <Tkn> ListParser<Void, Tkn> endOfStream() {
-        return (ListParser<Void, Tkn>) Parsers.<ListStreamParser<Tkn>, List<Tkn>, Tkn>endOfStream();
+        return (ListParser<Void, Tkn>) Parsers.<ListParserStream<Tkn>, List<Tkn>, Tkn>endOfStream();
     }
 
     /**

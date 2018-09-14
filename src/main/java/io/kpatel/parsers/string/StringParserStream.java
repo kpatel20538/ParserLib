@@ -18,7 +18,7 @@ public class StringParserStream implements ParserStream<StringParserStream, Stri
         this.stream = stream;
         this.position = 0;
         this.lineNumber = 1;
-        this.columnNumber = 1;
+        this.columnNumber = 0;
     }
 
     private StringParserStream(String stream, int position, int lineNumber, int columnNumber) {
@@ -40,7 +40,7 @@ public class StringParserStream implements ParserStream<StringParserStream, Stri
         if (0 < length && position < stream.length()) {
             int endPosition = position + length;
             if (stream.length() <= endPosition) {
-                endPosition = stream.length() - 1;
+                endPosition = stream.length();
             }
             return stream.substring(position, endPosition);
         }

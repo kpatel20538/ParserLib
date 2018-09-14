@@ -10,16 +10,16 @@ import java.util.function.Predicate;
 /**
  * WHY: Specialize ParserStream for Stream
  */
-public class ListStreamParser<Tkn> implements ParserStream<ListStreamParser<Tkn>, List<Tkn>, Tkn> {
+public class ListParserStream<Tkn> implements ParserStream<ListParserStream<Tkn>, List<Tkn>, Tkn> {
     private final List<Tkn> stream;
     private final int position;
 
-    public ListStreamParser(List<Tkn> stream) {
-        this.stream = stream;
+    public ListParserStream(List<Tkn> stream) {
+        this.stream = Collections.unmodifiableList(stream);
         this.position = 0;
     }
 
-    private ListStreamParser(List<Tkn> stream, int position) {
+    private ListParserStream(List<Tkn> stream, int position) {
         this.stream = stream;
         this.position = position;
     }
@@ -36,7 +36,7 @@ public class ListStreamParser<Tkn> implements ParserStream<ListStreamParser<Tkn>
         if (0 < length && position < stream.size()) {
             int endPosition = position + length;
             if (stream.size() <= endPosition) {
-                endPosition = stream.size() - 1;
+                endPosition = stream.size();
             }
             return Collections.unmodifiableList(stream.subList(position, endPosition));
         }
@@ -55,9 +55,9 @@ public class ListStreamParser<Tkn> implements ParserStream<ListStreamParser<Tkn>
     }
 
     @Override
-    public ListStreamParser<Tkn> jump(int n) {
+    public ListParserStream<Tkn> jump(int n) {
         if (0 < n) {
-            return new ListStreamParser<>(stream, position + n);
+            return new ListParserStream<>(stream, position + n);
         }
         return this;
     }
