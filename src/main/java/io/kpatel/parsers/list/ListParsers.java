@@ -29,23 +29,23 @@ public final class ListParsers {
     /**
      * WHAT: Forward to Generic Helper Function
      *
-     * @see Parsers#withPrefix
+     * @see Parsers#prefix
      */
     public static <T, Tkn> ListParser<T, Tkn> withPrefix(
             ListParser<?, Tkn> prefix,
             ListParser<T, Tkn> parser) {
-        return (ListParser<T, Tkn>) Parsers.withPrefix(prefix, parser);
+        return (ListParser<T, Tkn>) Parsers.prefix(prefix, parser);
     }
 
     /**
      * WHAT: Forward to Generic Helper Function
      *
-     * @see Parsers#withPostfix
+     * @see Parsers#postfix
      */
     public static <T, Tkn> ListParser<T, Tkn> withPostfix(
             ListParser<T, Tkn> parser,
             ListParser<?, Tkn> postfix) {
-        return (ListParser<T, Tkn>) Parsers.withPostfix(parser, postfix);
+        return (ListParser<T, Tkn>) Parsers.postfix(parser, postfix);
     }
 
     /**
@@ -60,27 +60,37 @@ public final class ListParsers {
         return (ListParser<T, Tkn>) Parsers.between(prefix, parser, postfix);
     }
 
+    //TODO: EndOfStream
+    //TODO: Peek
+    //TODO: Alternate
+
+    //TODO: Prefix
+    //TODO: Postfix
+    //TODO: Between
+
     //TODO: String Concatenate
     //TODO: List Concatenate
     //TODO: Generic Concatenate
+
     //TODO: String OneOrMore
     //TODO: List OneOrMore
     //TODO: Generic OneOrMore
+
     //TODO: String ZeroOrMore
     //TODO: List ZeroOrMore
     //TODO: Generic ZeroOrMore
+
     //TODO: String Delimited
     //TODO: List Delimited
     //TODO: Generic Delimited
 
-    //TODO: Alternate
-    //TODO: Peek
-
-    //TODO: Optional
-    //TODO: Omit
     //TODO: String Optional
+    //TODO: Generic Optional
+
     //TODO: String Omit
+    //TODO: Generic Omit
 
     //TODO: Terminal Item
+    //TODO: Terminal Run
     //TODO: Terminal Sequence
 }

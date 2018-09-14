@@ -78,6 +78,12 @@ public abstract class Result<T, Strm extends ParserStream<Strm, ?, ?>> {
      * WHY: Exception Prone Unwrapping Operation
      */
     public abstract T getOrElse(Supplier<T> otherwise);
+
+    /**
+     * WHAT: Visitor Pattern seeking the Success Case
+     * WHY: Indicates Success Case
+     */
+    public abstract boolean isSuccess();
 }
 
 
@@ -157,6 +163,16 @@ final class Success<T, Strm extends ParserStream<Strm, ?, ?>> extends Result<T, 
     public T getOrElse(Supplier<T> otherwise) {
         return getResult();
     }
+
+    /**
+     * WHAT: return true
+     *
+     * @see Result#isSuccess
+     * @see Failure#isSuccess
+     */
+    public boolean isSuccess() {
+        return true;
+    }
 }
 
 final class Failure<T, Strm extends ParserStream<Strm, ?, ?>> extends Result<T, Strm> {
@@ -235,5 +251,15 @@ final class Failure<T, Strm extends ParserStream<Strm, ?, ?>> extends Result<T, 
      */
     public T getOrElse(Supplier<T> otherwise) {
         return otherwise.get();
+    }
+
+    /**
+     * WHAT: return false
+     *
+     * @see Result#isSuccess
+     * @see Failure#isSuccess
+     */
+    public boolean isSuccess() {
+        return false;
     }
 }

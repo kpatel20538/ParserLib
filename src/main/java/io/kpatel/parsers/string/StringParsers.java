@@ -2,8 +2,8 @@ package io.kpatel.parsers.string;
 
 import io.kpatel.parsers.Parsers;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -22,72 +22,182 @@ public final class StringParsers {
     }
 
     /**
-     * WHAT: Forward to Generic Helper Function
+     * WHAT: Peek ahead and parse an item without changing the stream.
+     */
+    public static <T> StringParser<T> peek(StringParser<T> parser) {
+        return Parsers.peek(parser)::parse;
+    }
+
+    /**
+     * WHAT: A Parser that fails if their is still input to take in.
      *
      * @see Parsers#endOfStream
      */
     public static StringParser<Void> endOfStream() {
-        return (StringParser<Void>) Parsers.<StringParserStream, String, Character>
-                endOfStream();
+        return Parsers.<StringParserStream, String, Character>
+                endOfStream()::parse;
     }
 
     /**
-     * WHAT: Forward to Generic Helper Function
+     * WHAT: Parse until until one parse succeeds or all parsers fail
      *
-     * @see Parsers#withPrefix
+     * @see Parsers#alternate
      */
-    public static <T> StringParser<T> withPrefix(
-            StringParser<?> prefix,
+    public static <T> StringParser<T> alternate(List<StringParser<T>> parsers) {
+        return Parsers.alternate(parsers)::parse;
+    }
+
+    /**
+     * WHAT: Parse until all parsers succeeds or one parser fail and join the results to the empty string
+     */
+    public static StringParser<String> concatenateString(
+            List<? extends StringParser<String>> parsers) {
+        return Parsers.concatenateString(parsers)::parse;
+    }
+
+    /**
+     * WHAT: Parse until all parsers succeeds or one parser fail and join the results to the empty list
+     */
+    public static <T> StringParser<List<T>> concatenateList(
+            List<? extends StringParser<T>> parsers) {
+        return Parsers.concatenateList(parsers)::parse;
+    }
+
+    /**
+     * WHAT: Parse until all parsers succeeds or one parser fail and join the results to the empty case
+     */
+    public static <T, Bld> StringParser<Bld> concatenate(
+            BiFunction<Bld, T, Bld> reduce,
+            Supplier<Bld> empty,
+            List<? extends StringParser<T>> parsers) {
+        return Parsers.concatenate(reduce, empty, parsers)::parse;
+    }
+
+    /**
+     * WHAT: Parse a parser until it fails and join the results to the empty string
+     */
+    public static StringParser<String> zeroOrMoreString(
+            StringParser<String> parser) {
+        return Parsers.zeroOrMoreString(parser)::parse;
+    }
+
+    /**
+     * WHAT: Parse a parser until it fails and join the results to the empty list
+     */
+    public static <T> StringParser<List<T>> zeroOrMoreList(
             StringParser<T> parser) {
-        return (StringParser<T>) Parsers.withPrefix(prefix, parser);
+        return Parsers.zeroOrMoreList(parser)::parse;
     }
 
     /**
-     * WHAT: Forward to Generic Helper Function
-     *
-     * @see Parsers#withPostfix
+     * WHAT: Parse a parser until it fails and join the results to the empty case
      */
-    public static <T> StringParser<T> withPostfix(
-            StringParser<T> parser,
-            StringParser<?> postfix) {
-        return (StringParser<T>) Parsers.withPostfix(parser, postfix);
+    public static <T, Bld> StringParser<Bld> zeroOrMore(
+            BiFunction<Bld, T, Bld> reduce,
+            Supplier<Bld> empty,
+            StringParser<T> parser) {
+        return Parsers.zeroOrMore(reduce, empty, parser)::parse;
     }
 
     /**
-     * WHAT: Forward to Generic Helper Function
+     * WHAT: WHAT: Parse a parser until it fails and join the results to the empty string, requires at least one
+     */
+    public static StringParser<String> oneOrMoreString(
+            StringParser<String> parser) {
+        return Parsers.oneOrMoreString(parser)::parse;
+    }
+
+    /**
+     * WHAT: Parse a parser until it fails and join the results to the empty list, requires at least one
+     */
+    public static <T> StringParser<List<T>> oneOrMoreList(
+            StringParser<T> parser) {
+        return Parsers.oneOrMoreList(parser)::parse;
+    }
+
+    /**
+     * WHAT: Parse a parser until it fails and join the results to the empty case, requires at least one
+     */
+    public static <T, Bld> StringParser<Bld> oneOrMore(
+            BiFunction<Bld, T, Bld> reduce,
+            Supplier<Bld> empty,
+            StringParser<T> parser) {
+        return Parsers.oneOrMore(reduce, empty, parser)::parse;
+    }
+
+    /**
+     * WHAT: WHAT: Parse a parser until it fails and join the results to the empty string, requires at least one
+     */
+    public static StringParser<String> delimitedString(
+            StringParser<String> parser,
+            StringParser<?> delimiter) {
+        return delimited(StringBuilder::append, StringBuilder::new, parser, delimiter)
+                .map(StringBuilder::toString)::parse;
+    }
+
+    /**
+     * WHAT: Parse a parser until it fails and join the results to the empty list, requires at least one
+     */
+    public static <T> StringParser<List<T>> delimitedList(
+            StringParser<T> parser,
+            StringParser<?> delimiter) {
+        return delimited(
+                (list, item) -> {
+                    list.add(item);
+                    return list;
+                },
+                () -> new ArrayList<T>(),
+                parser, delimiter
+        ).map(Collections::unmodifiableList)::parse;
+    }
+
+    /**
+     * WHAT: Parse a parser until it fails and join the results to the empty case, requires at least one
+     */
+    public static <T, Bld>
+    StringParser<Bld> delimited(
+            BiFunction<Bld, T, Bld> reduce,
+            Supplier<Bld> empty,
+            StringParser<T> parser,
+            StringParser<?> delimiter) {
+        return Parsers.delimited(reduce, empty, parser, delimiter)::parse;
+    }
+
+    /**
+     * WHAT: Parse an item with a prefix and omit the prefix
+     *
+     * @see Parsers#prefix
+     */
+    public static <T> StringParser<T> prefix(
+            StringParser<?> before,
+            StringParser<T> parser) {
+        return Parsers.prefix(before, parser)::parse;
+    }
+
+    /**
+     * WHAT: Parse an item with a postfix and omit the postfix
+     *
+     * @see Parsers#postfix
+     */
+    public static <T> StringParser<T> postfix(
+            StringParser<T> parser,
+            StringParser<?> after) {
+        return Parsers.postfix(parser, after)::parse;
+    }
+
+    /**
+     * WHAT: Parse an item with a prefix and a postfix and omit both the prefix and the postfix
      *
      * @see Parsers#between
      */
     public static <T> StringParser<T> between(
-            StringParser<?> prefix,
+            StringParser<?> before,
             StringParser<T> parser,
-            StringParser<?> postfix) {
-        return (StringParser<T>) Parsers.between(prefix, parser, postfix);
+            StringParser<?> after) {
+        return Parsers.between(before, parser, after)::parse;
     }
 
-    //TODO: EndOfStream
-    //TODO: Peek
-    //TODO: Alternate
 
-    //TODO: Prefix
-    //TODO: Postfix
-    //TODO: Between
-
-    //TODO: String Concatenate
-    //TODO: List Concatenate
-    //TODO: Generic Concatenate
-
-    //TODO: String OneOrMore
-    //TODO: List OneOrMore
-    //TODO: Generic OneOrMore
-
-    //TODO: String ZeroOrMore
-    //TODO: List ZeroOrMore
-    //TODO: Generic ZeroOrMore
-
-    //TODO: String Delimited
-    //TODO: List Delimited
-    //TODO: Generic Delimited
 
     /**
      * WHAT: Attempt to parser a string or else yield an empty String
@@ -120,16 +230,15 @@ public final class StringParsers {
         return Parsers.omit(parser, placeholder)::parse;
     }
 
-
     /**
      * WHAT: Parse a Character that satisfy a given predicate
      *
-     * @see Parsers#item
+     * @see Parsers#terminalItem
      */
     public static StringParser<Character> character(
             Predicate<Character> predicate,
             Supplier<String> errorMessage) {
-        return Parsers.<StringParserStream, String, Character>item(predicate, errorMessage)::parse;
+        return Parsers.<StringParserStream, String, Character>terminalItem(predicate, errorMessage)::parse;
     }
 
     /**
@@ -137,8 +246,7 @@ public final class StringParsers {
      *
      * @see StringParsers#character(Predicate, Supplier)
      */
-    public static StringParser<Character> character(
-            Character target) {
+    public static StringParser<Character> character(Character target) {
         return character(target::equals, () -> String.format("Cannot find Character %s", target));
     }
 
@@ -148,12 +256,8 @@ public final class StringParsers {
      * @see StringParsers#character(Predicate, Supplier)
      */
     public static StringParser<Character> character(
-            String characters,
-            Supplier<String> errorMessage) {
-        Set<Character> characterSet = new HashSet<>(characters.length());
-        for (Character c : characters.toCharArray()) {
-            characterSet.add(c);
-        }
+            String characters, Supplier<String> errorMessage) {
+        Set<Character> characterSet = toCharacterSet(characters);
         return character(characterSet::contains, errorMessage);
     }
 
@@ -166,5 +270,64 @@ public final class StringParsers {
         return Parsers.<StringParserStream, String, Character>
                 terminalSequence(sequence, String::length, () -> String.format("Cannot Find String %s", sequence))
                 ::parse;
+    }
+
+    /**
+     * WHAT: Parse a run of characters that satisfy a given predicate, Will always succeed
+     */
+    public static StringParser<String> run(Predicate<Character> predicate) {
+        return Parsers.<StringParserStream, String, Character>
+                terminalRun(predicate, String::length)::parse;
+    }
+
+    /**
+     * WHAT: Parse a run of given character, Will always succeed
+     */
+    public static StringParser<String> run(Character target) {
+        return run(target::equals);
+    }
+
+    /**
+     * WHAT: Parse a run of any character from the give string, Will always succeed
+     */
+    public static StringParser<String> run(String characters) {
+        Set<Character> characterSet = toCharacterSet(characters);
+        return run(characterSet::contains);
+    }
+
+    /**
+     * WHAT: Parse a run of characters that satisfy a given predicate, Will fail is nothing is found
+     */
+    public static StringParser<String> nonEmptyRun(Predicate<Character> predicate, Supplier<String> errorMessage) {
+        return characterStringConcat(character(predicate, errorMessage), run(predicate));
+    }
+
+    /**
+     * WHAT: Parse a run of given character, Will fail is nothing is found
+     */
+    public static StringParser<String> nonEmptyRun(Character target) {
+        return characterStringConcat(character(target), run(target));
+    }
+
+    /**
+     * WHAT: Parse a run of any character from the give string, Will fail is nothing is found
+     */
+    public static StringParser<String> nonEmptyRun(String characters, Supplier<String> errorMessage) {
+        Set<Character> characterSet = toCharacterSet(characters);
+        return characterStringConcat(character(characterSet::contains, errorMessage), run(characterSet::contains));
+    }
+
+    private static Set<Character> toCharacterSet(String characters) {
+        Set<Character> characterSet = new HashSet<>(characters.length());
+        for (Character c : characters.toCharArray()) {
+            characterSet.add(c);
+        }
+        return characterSet;
+    }
+
+    private static StringParser<String> characterStringConcat(
+            StringParser<Character> charParser,
+            StringParser<String> strParser) {
+        return charParser.chain(c -> strParser.map(str -> c.toString() + str))::parse;
     }
 }

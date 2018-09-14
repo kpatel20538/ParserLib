@@ -3,7 +3,7 @@ package io.kpatel.parsers;
 import io.kpatel.parsers.string.StringParserStream;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class ResultUnwrapTest {
     @Test
@@ -42,5 +42,21 @@ public class ResultUnwrapTest {
         String item = result.getOrElse(() -> "World");
 
         assertEquals("World", item);
+    }
+
+    @Test
+    public void testIsSuccess() {
+        StringParserStream parserStream = new StringParserStream("");
+        Result<String, StringParserStream> result = Result.success("Hello", parserStream);
+
+        assertTrue(result.isSuccess());
+    }
+
+    @Test
+    public void testIsFailure() {
+        StringParserStream parserStream = new StringParserStream("");
+        Result<String, StringParserStream> result = Result.failure("Error", parserStream);
+
+        assertFalse(result.isSuccess());
     }
 }
