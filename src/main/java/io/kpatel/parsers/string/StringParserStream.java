@@ -5,6 +5,9 @@ import io.kpatel.parsers.ParserStream;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+/**
+ * WHY: Specialize ParserStream for Stream
+ */
 public class StringParserStream implements ParserStream<StringParserStream, String, Character> {
     private final String stream;
     private final int position;
@@ -27,22 +30,58 @@ public class StringParserStream implements ParserStream<StringParserStream, Stri
 
     @Override
     public Optional<Character> getLeadingItem() {
-        return Optional.empty();
+        return position < stream.length()
+                ? Optional.of(stream.charAt(position))
+                : Optional.empty();
     }
 
     @Override
     public String getLeadingSequence(int length) {
-        return null;
+        if (0 < length && position < stream.length()) {
+            int endPosition = position + length;
+            if (stream.length() <= endPosition) {
+                endPosition = stream.length() - 1;
+            }
+            return stream.substring(position, endPosition);
+        }
+        return "";
     }
 
     @Override
     public String getLeadingRun(Predicate<Character> predicate) {
-        return null;
+        if (position < stream.length()) {
+            int endPosition = position;
+            while (endPosition < stream.length() && predicate.test(stream.charAt(endPosition)))
+                endPosition++;
+            return stream.substring(position, endPosition);
+        }
+        return "";
     }
 
     @Override
     public StringParserStream jump(int n) {
-        return null;
+        if (0 < n) {
+            String stage = getLeadingSequence(n);
+            int lineCount = 0;
+            int colCount = 0;
+            for (int idx = stage.length() - 1; idx >= 0; idx--) {
+                if (stage.charAt(idx) == '\n') {
+                    lineCount++;
+                }
+                if (lineCount == 0) {
+                    colCount++;
+                }
+            }
+            if (lineCount == 0) {
+                colCount += columnNumber;
+            } else {
+                lineCount += lineNumber;
+            }
+            return new StringParserStream(
+                    stream, position + n,
+                    lineCount, colCount);
+        }
+        return this;
     }
 
     public int getLineNumber() {

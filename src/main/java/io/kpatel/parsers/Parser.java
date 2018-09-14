@@ -25,7 +25,7 @@ public interface Parser<T, Strm extends ParserStream<Strm,Seq,Itm>, Seq, Itm> {
     /** WHAT: Deferring to Result object
      *        Transform result value w/o altering the stream w/ no chance of Failure
      *   WHY: Composing Operations for Success to Success Case
-     *  @see Result::map
+     *  @see Result#map
      */
     default <U> Parser<U, Strm, Seq, Itm> map(Function<T, U> mapper) {
         return stream -> parse(stream).chain((t, remaining) -> Result.success(mapper.apply(t), remaining));
@@ -36,7 +36,7 @@ public interface Parser<T, Strm extends ParserStream<Strm,Seq,Itm>, Seq, Itm> {
      * Transform result value and stream w/ chance of Failure
      * WHY: Composing Operations for Success to Success/Failure Case
      *
-     * @see Result::chain
+     * @see Result#chain
      */
     default <U> Parser<U, Strm, Seq, Itm> chain(Function<T, Parser<U, Strm, Seq, Itm>> flatMapper) {
         return stream -> parse(stream).chain((t, remaining) -> flatMapper.apply(t).parse(remaining));
@@ -45,7 +45,7 @@ public interface Parser<T, Strm extends ParserStream<Strm,Seq,Itm>, Seq, Itm> {
     /** WHAT: Deferring to Result object
      *        Transform Failure to Success and rollback stream
      *   WHY: Composing Operations for Failure to Success/Failure Case
-     *   @see Result::orElse
+     *   @see Result#orElse
      */
     default Parser<T, Strm, Seq, Itm> orElse(Supplier<Parser<T, Strm, Seq, Itm>> alternative) {
         return stream -> parse(stream).orElse(() -> alternative.get().parse(stream));

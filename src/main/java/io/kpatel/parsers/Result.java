@@ -40,21 +40,21 @@ public abstract class Result<T, Strm extends ParserStream<Strm,?,?>> {
     /** WHAT: Visitor Pattern seeking the Success Case.
      *        Transform result value w/o altering the stream w/ no chance of Failure
      *   WHY: Composing Operations for Success to Success Case
-     *  @see Success::map
+     *  @see Success#map
      */
     public abstract <U> Result<U, Strm> map(BiFunction<T, Strm, U> mapper);
 
     /** WHAT: Visitor Pattern seeking the Success Case.
      *        Transform result value and stream w/ chance of Failure
      *   WHY: Composing Operations for Success to Success/Failure Case
-     *   @see Success::chain
+     *   @see Success#chain
      */
     public abstract <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> flatMapper);
 
     /** WHAT: Visitor Pattern seeking the Failure Case
      *        Transform Failure to Success and rollback stream
      *   WHY: Composing Operations for Failure to Success/Failure Case
-     *   @see Failure::orElse
+     *   @see Failure#orElse
      */
     public abstract Result<T, Strm> orElse(Supplier<Result<T, Strm>> alternative);
 
@@ -96,7 +96,7 @@ final class Success<T, Strm extends ParserStream<Strm, ?, ?>> extends Result<T, 
     }
 
     /** WHAT: Transform result value w/o altering the stream w/ no chance of Failure
-     *  @see Result::map
+     *  @see Result#map
      */
     public <U> Result<U, Strm> map(BiFunction<T, Strm, U> transform) {
         U newResult = transform.apply(getResult(), getRemaining());
@@ -104,31 +104,31 @@ final class Success<T, Strm extends ParserStream<Strm, ?, ?>> extends Result<T, 
     }
 
     /** WHAT: Transform result value and stream w/ chance of Failure
-     *  @see Result::chain
+     *  @see Result#chain
      */
     public <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> transform) {
         return transform.apply(getResult(), getRemaining());
     }
 
     /** WHAT: Nothing in this case
-     *  @see Result::orElse
-     *  @see Failure::orElse
+     *  @see Result#orElse
+     *  @see Failure#orElse
      */
     public Result<T, Strm> orElse(Supplier<Result<T, Strm>> alternative) {
         return this;
     }
 
     /** WHAT: return result
-     *  @see Result::getOrThrow
-     *  @see Failure::getOrThrow
+     *  @see Result#getOrThrow
+     *  @see Failure#getOrThrow
      */
     public T getOrThrow() {
         return getResult();
     }
 
     /** WHAT: return result
-     *  @see Result::getOrElse
-     *  @see Failure::getOrElse
+     *  @see Result#getOrElse
+     *  @see Failure#getOrElse
      */
     public T getOrElse(Supplier<T> otherwise) {
         return getResult();
@@ -161,31 +161,31 @@ final class Failure<T, Strm extends ParserStream<Strm, ?, ?>> extends Result<T, 
     }
 
     /** WHAT: Nothing in this case
-     *  @see Result::map
-     *  @see Success::map
+     *  @see Result#map
+     *  @see Success#map
      */
     public <U> Result<U, Strm> map(BiFunction<T, Strm, U> transform) {
         return Result.failure(getErrorMessage(), getRemaining());
     }
 
     /** WHAT: Nothing in this case
-     *  @see Result::chain
-     *  @see Success::chain
+     *  @see Result#chain
+     *  @see Success#chain
      */
     public <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> transform) {
         return Result.failure(getErrorMessage(), getRemaining());
     }
 
     /** WHAT: Transform Failure to Success and rollback stream
-     *  @see Result::orElse
+     *  @see Result#orElse
      */
     public Result<T, Strm> orElse(Supplier<Result<T, Strm>> alternative) {
         return alternative.get();
     }
 
     /** WHAT: No Result, Throw Error
-     *  @see Result::orElse
-     *  @see Success::orElse
+     *  @see Result#orElse
+     *  @see Success#orElse
      */
     public T getOrThrow() {
         throw new ParserError(String.format("[%s] : %s",
@@ -193,8 +193,8 @@ final class Failure<T, Strm extends ParserStream<Strm, ?, ?>> extends Result<T, 
     }
 
     /** WHAT: No Result, consult supplier
-     *  @see Result::orElse
-     *  @see Success::orElse
+     *  @see Result#orElse
+     *  @see Success#orElse
      */
     public T getOrElse(Supplier<T> otherwise) {
         return otherwise.get();
