@@ -45,6 +45,20 @@ public final class Parsers {
     }
 
     /**
+     * WHAT: Parse an item unless in falls in the exception case.
+     */
+    public static <T, Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
+    Parser<T, Strm, Seq, Itm> exception(
+            Parser<T, Strm, Seq, Itm> parser,
+            Predicate<T> except) {
+        return stream -> parser.parse(stream).chain((item, stream1) ->
+                except.test(item)
+                        ? Result.failure("Parser result was in exception case", stream)
+                        : Result.success(item, stream1)
+        );
+    }
+
+    /**
      * WHAT: Parse until one parse succeeds or all parsers fail
      */
     public static <T, Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
@@ -65,8 +79,11 @@ public final class Parsers {
     public static <Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
     Parser<String, Strm, Seq, Itm> concatenateString(
             List<? extends Parser<String, Strm, Seq, Itm>> parsers) {
-        return Parsers.concatenate(StringBuilder::append, StringBuilder::new, parsers)
-                .map(StringBuilder::toString);
+        return Parsers.concatenate(
+                StringBuilder::append,
+                StringBuilder::new,
+                parsers
+        ).map(StringBuilder::toString);
     }
 
     /**
@@ -76,12 +93,10 @@ public final class Parsers {
     Parser<List<T>, Strm, Seq, Itm> concatenateList(
             List<? extends Parser<T, Strm, Seq, Itm>> parsers) {
         return Parsers.concatenate(
-                (list, item) -> {
-                    list.add(item);
-                    return list;
-                },
-                () -> new ArrayList<T>(),
-                parsers).map(Collections::unmodifiableList);
+                Parsers::appendList,
+                Parsers::<T>newList,
+                parsers
+        ).map(Collections::unmodifiableList);
     }
 
     /**
@@ -103,13 +118,16 @@ public final class Parsers {
     }
 
     /**
-     * WHAT: WHAT: Parse a parser until it fails and join the results to the empty string
+     * WHAT: Parse a parser until it fails and join the results to the empty string
      */
     public static <Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
     Parser<String, Strm, Seq, Itm> zeroOrMoreString(
             Parser<String, Strm, Seq, Itm> parser) {
-        return Parsers.zeroOrMore(StringBuilder::append, StringBuilder::new, parser)
-                .map(StringBuilder::toString);
+        return Parsers.zeroOrMore(
+                StringBuilder::append,
+                StringBuilder::new,
+                parser
+        ).map(StringBuilder::toString);
     }
 
     /**
@@ -119,12 +137,10 @@ public final class Parsers {
     Parser<List<T>, Strm, Seq, Itm> zeroOrMoreList(
             Parser<T, Strm, Seq, Itm> parser) {
         return Parsers.zeroOrMore(
-                (list, item) -> {
-                    list.add(item);
-                    return list;
-                },
-                () -> new ArrayList<T>(),
-                parser).map(Collections::unmodifiableList);
+                Parsers::appendList,
+                Parsers::<T>newList,
+                parser
+        ).map(Collections::unmodifiableList);
     }
 
     /**
@@ -149,13 +165,16 @@ public final class Parsers {
     }
 
     /**
-     * WHAT: WHAT: Parse a parser until it fails and join the results to the empty string, requires at least one
+     * WHAT: Parse a parser until it fails and join the results to the empty string, requires at least one
      */
     public static <Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
     Parser<String, Strm, Seq, Itm> oneOrMoreString(
             Parser<String, Strm, Seq, Itm> parser) {
-        return oneOrMore(StringBuilder::append, StringBuilder::new, parser)
-                .map(StringBuilder::toString);
+        return oneOrMore(
+                StringBuilder::append,
+                StringBuilder::new,
+                parser
+        ).map(StringBuilder::toString);
     }
 
     /**
@@ -165,11 +184,8 @@ public final class Parsers {
     Parser<List<T>, Strm, Seq, Itm> oneOrMoreList(
             Parser<T, Strm, Seq, Itm> parser) {
         return oneOrMore(
-                (list, item) -> {
-                    list.add(item);
-                    return list;
-                },
-                () -> new ArrayList<T>(),
+                Parsers::appendList,
+                Parsers::<T>newList,
                 parser).map(Collections::unmodifiableList);
     }
 
@@ -185,14 +201,17 @@ public final class Parsers {
     }
 
     /**
-     * WHAT: WHAT: Parse a parser until it fails and join the results to the empty string, requires at least one
+     * WHAT: Parse a parser until it fails and join the results to the empty string, requires at least one
      */
     public static <Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
     Parser<String, Strm, Seq, Itm> delimitedString(
             Parser<String, Strm, Seq, Itm> parser,
             Parser<?, Strm, Seq, Itm> delimiter) {
-        return delimited(StringBuilder::append, StringBuilder::new, parser, delimiter)
-                .map(StringBuilder::toString);
+        return delimited(
+                StringBuilder::append,
+                StringBuilder::new,
+                parser, delimiter
+        ).map(StringBuilder::toString);
     }
 
     /**
@@ -203,11 +222,8 @@ public final class Parsers {
             Parser<T, Strm, Seq, Itm> parser,
             Parser<?, Strm, Seq, Itm> delimiter) {
         return delimited(
-                (list, item) -> {
-                    list.add(item);
-                    return list;
-                },
-                () -> new ArrayList<T>(),
+                Parsers::appendList,
+                Parsers::<T>newList,
                 parser, delimiter
         ).map(Collections::unmodifiableList);
     }
@@ -224,6 +240,110 @@ public final class Parsers {
         return optional(parser.chain(item -> zeroOrMore(reduce, () -> reduce.apply(empty.get(), item), prefix(delimiter, parser))), empty);
     }
 
+    /**
+     * WHAT: Parses an exact number of an item and joins them to a string
+     */
+    public static <Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
+    Parser<String, Strm, Seq, Itm> repetitionString(
+            int count,
+            Parser<String, Strm, Seq, Itm> parser) {
+        return repetition(
+                count,
+                StringBuilder::append,
+                StringBuilder::new,
+                parser
+        ).map(StringBuilder::toString);
+    }
+
+    /**
+     * WHAT: Parses an exact number of an item and joins them to a list
+     */
+    public static <T, Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
+    Parser<List<T>, Strm, Seq, Itm> repetitionList(
+            int count,
+            Parser<T, Strm, Seq, Itm> parser) {
+        return repetition(
+                count,
+                Parsers::appendList,
+                Parsers::<T>newList,
+                parser).map(Collections::unmodifiableList);
+    }
+
+    /**
+     * WHAT: Parses an exact number of an item and joins them together
+     */
+    public static <T, Bld, Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
+    Parser<Bld, Strm, Seq, Itm> repetition(
+            int count,
+            BiFunction<Bld, T, Bld> reduce,
+            Supplier<Bld> empty,
+            Parser<T, Strm, Seq, Itm> parser) {
+        return stream -> {
+            Result<Bld, Strm> result = Result.success(empty.get(), stream);
+            for (int i = 0; i < count && result.isSuccess(); i++) {
+                result = result.chain((bld, stream1) -> parser.parse(stream1)
+                        .map((itm, stream2) -> reduce.apply(bld, itm)));
+            }
+            return result;
+        };
+    }
+
+    /**
+     * WHAT: Parses a range of an item and joins them to a string
+     */
+    public static <Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
+    Parser<String, Strm, Seq, Itm> repetitionString(
+            int inclusiveLow, int inclusiveHigh,
+            Parser<String, Strm, Seq, Itm> parser) {
+        return repetition(
+                inclusiveLow, inclusiveHigh,
+                StringBuilder::append,
+                StringBuilder::new,
+                parser
+        ).map(StringBuilder::toString);
+    }
+
+    /**
+     * WHAT: Parses a range of an item and joins them to a list
+     */
+    public static <T, Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
+    Parser<List<T>, Strm, Seq, Itm> repetitionList(
+            int inclusiveLow, int inclusiveHigh,
+            Parser<T, Strm, Seq, Itm> parser) {
+        return repetition(
+                inclusiveLow, inclusiveHigh,
+                Parsers::appendList,
+                Parsers::<T>newList,
+                parser).map(Collections::unmodifiableList);
+    }
+
+    /**
+     * WHAT: Parses a range of an item and joins them together
+     */
+    public static <T, Bld, Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm>
+    Parser<Bld, Strm, Seq, Itm> repetition(
+            int inclusiveLow, int inclusiveHigh,
+            BiFunction<Bld, T, Bld> reduce,
+            Supplier<Bld> empty,
+            Parser<T, Strm, Seq, Itm> parser) {
+        return stream -> {
+            Result<Bld, Strm> result = Result.success(empty.get(), stream);
+            for (int i = 0; i < inclusiveLow && result.isSuccess(); i++) {
+                result = result.chain((bld, stream1) -> parser.parse(stream1)
+                        .map((itm, stream2) -> reduce.apply(bld, itm)));
+            }
+            if (!result.isSuccess()) {
+                return result;
+            }
+            Result<Bld, Strm> prevResult = result;
+            for (int i = inclusiveLow; i < inclusiveHigh && result.isSuccess(); i++) {
+                prevResult = result;
+                result = result.chain((bld, stream1) -> parser.parse(stream1)
+                        .map((itm, stream2) -> reduce.apply(bld, itm)));
+            }
+            return prevResult;
+        };
+    }
 
     /**
      * WHAT: Parse an item with a prefix and omit the prefix
@@ -332,5 +452,14 @@ public final class Parsers {
             int size = measureLength.apply(run);
             return Result.success(run, stream.jump(size));
         };
+    }
+
+    private static <T> List<T> newList() {
+        return new ArrayList<>();
+    }
+
+    private static <T> List<T> appendList(List<T> list, T item) {
+        list.add(item);
+        return list;
     }
 }

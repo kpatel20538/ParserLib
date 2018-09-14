@@ -2,7 +2,9 @@ package io.kpatel.parsers.string;
 
 import io.kpatel.parsers.Parsers;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -19,6 +21,7 @@ public final class StringParsers {
      * WHY: Prevent un-necessary instances of helper class
      */
     private StringParsers() {
+
     }
 
     /**
@@ -36,6 +39,17 @@ public final class StringParsers {
     public static StringParser<Void> endOfStream() {
         return Parsers.<StringParserStream, String, Character>
                 endOfStream()::parse;
+    }
+
+    /**
+     * WHAT: Parse an item unless in falls in the exception case.
+     *
+     * @see Parsers#exception
+     */
+    public static <T> StringParser<T> exception(
+            StringParser<T> parser,
+            Predicate<T> except) {
+        return Parsers.exception(parser, except)::parse;
     }
 
     /**
@@ -131,8 +145,18 @@ public final class StringParsers {
     public static StringParser<String> delimitedString(
             StringParser<String> parser,
             StringParser<?> delimiter) {
-        return delimited(StringBuilder::append, StringBuilder::new, parser, delimiter)
-                .map(StringBuilder::toString)::parse;
+        return Parsers.delimitedString(parser, delimiter)::parse;
+    }
+
+    /**
+     * WHAT: Parse a parser until it fails and join the results to the empty case, requires at least one
+     */
+    public static <T, Bld> StringParser<Bld> repetition(
+            int inclusiveLow, int inclusiveHigh,
+            BiFunction<Bld, T, Bld> reduce,
+            Supplier<Bld> empty,
+            StringParser<T> parser) {
+        return Parsers.repetition(inclusiveLow, inclusiveHigh, reduce, empty, parser)::parse;
     }
 
     /**
@@ -141,14 +165,54 @@ public final class StringParsers {
     public static <T> StringParser<List<T>> delimitedList(
             StringParser<T> parser,
             StringParser<?> delimiter) {
-        return delimited(
-                (list, item) -> {
-                    list.add(item);
-                    return list;
-                },
-                () -> new ArrayList<T>(),
-                parser, delimiter
-        ).map(Collections::unmodifiableList)::parse;
+        return Parsers.delimitedList(parser, delimiter)::parse;
+    }
+
+    /**
+     * WHAT: WHAT: Parse a parser until it fails and join the results to the empty string, requires at least one
+     */
+    public static StringParser<String> repetitionString(
+            int count,
+            StringParser<String> parser) {
+        return Parsers.repetitionString(count, parser)::parse;
+    }
+
+    /**
+     * WHAT: Parse a parser until it fails and join the results to the empty list, requires at least one
+     */
+    public static <T> StringParser<List<T>> repetitionList(
+            int count,
+            StringParser<T> parser) {
+        return Parsers.repetitionList(count, parser)::parse;
+    }
+
+    /**
+     * WHAT: Parse a parser until it fails and join the results to the empty case, requires at least one
+     */
+    public static <T, Bld> StringParser<Bld> repetition(
+            int count,
+            BiFunction<Bld, T, Bld> reduce,
+            Supplier<Bld> empty,
+            StringParser<T> parser) {
+        return Parsers.repetition(count, reduce, empty, parser)::parse;
+    }
+
+    /**
+     * WHAT: WHAT: Parse a parser until it fails and join the results to the empty string, requires at least one
+     */
+    public static StringParser<String> repetitionString(
+            int inclusiveLow, int inclusiveHigh,
+            StringParser<String> parser) {
+        return Parsers.repetitionString(inclusiveLow, inclusiveHigh, parser)::parse;
+    }
+
+    /**
+     * WHAT: Parse a parser until it fails and join the results to the empty list, requires at least one
+     */
+    public static <T> StringParser<List<T>> repetitionList(
+            int inclusiveLow, int inclusiveHigh,
+            StringParser<T> parser) {
+        return Parsers.repetitionList(inclusiveLow, inclusiveHigh, parser)::parse;
     }
 
     /**

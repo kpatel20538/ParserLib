@@ -49,4 +49,77 @@ public class StringParsersRepetitionTest {
 
         result.getOrThrow();
     }
+
+    @Test
+    public void testFixedRepetitionSuccess() {
+        StringParserStream stream = new StringParserStream("1 1 1 1 1 ");
+        StringParser<String> parser = repetitionString(3, string("1 "));
+        Result<String, ?> result = parser.parse(stream);
+
+        String item = result.getOrThrow();
+
+        assertEquals("1 1 1 ", item);
+    }
+
+    @Test(expected = ParserError.class)
+    public void testFixedRepetitionFailure() {
+        StringParserStream stream = new StringParserStream("1 1 2 2 2 ");
+        StringParser<String> parser = repetitionString(3, string("1 "));
+        Result<String, ?> result = parser.parse(stream);
+
+        result.getOrThrow();
+    }
+
+    @Test
+    public void testRangedRepetitionSuccessInRange() {
+        StringParserStream stream = new StringParserStream("1 1 1 2 2 ");
+        StringParser<String> parser = repetitionString(2, 4, string("1 "));
+        Result<String, ?> result = parser.parse(stream);
+
+        String item = result.getOrThrow();
+
+        assertEquals("1 1 1 ", item);
+    }
+
+    @Test
+    public void testRangedRepetitionSuccessOutRange() {
+        StringParserStream stream = new StringParserStream("1 1 1 1 1 ");
+        StringParser<String> parser = repetitionString(2, 4, string("1 "));
+        Result<String, ?> result = parser.parse(stream);
+
+        String item = result.getOrThrow();
+
+        assertEquals("1 1 1 1 ", item);
+    }
+
+    @Test
+    public void testRangedRepetitionSuccessUpperEdge() {
+        StringParserStream stream = new StringParserStream("1 1 1 1 2 ");
+        StringParser<String> parser = repetitionString(2, 4, string("1 "));
+        Result<String, ?> result = parser.parse(stream);
+
+        String item = result.getOrThrow();
+
+        assertEquals("1 1 1 1 ", item);
+    }
+
+    @Test
+    public void testRangedRepetitionSuccessLowerEdge() {
+        StringParserStream stream = new StringParserStream("1 1 2 2 2 ");
+        StringParser<String> parser = repetitionString(2, 4, string("1 "));
+        Result<String, ?> result = parser.parse(stream);
+
+        String item = result.getOrThrow();
+
+        assertEquals("1 1 ", item);
+    }
+
+    @Test(expected = ParserError.class)
+    public void testRangedRepetitionFailure() {
+        StringParserStream stream = new StringParserStream("1 2 2 2 2 ");
+        StringParser<String> parser = repetitionString(2, 4, string("1 "));
+        Result<String, ?> result = parser.parse(stream);
+
+        result.getOrThrow();
+    }
 }

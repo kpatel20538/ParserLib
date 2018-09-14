@@ -48,4 +48,39 @@ public class StringParsersMiscTest {
 
         result.getOrThrow();
     }
+
+    @Test
+    public void testExceptionSuccess() {
+        StringParserStream stream = new StringParserStream("Hello World");
+        StringParser<String> parser = exception(
+                string("Hello"),
+                str -> str.charAt(0) == 'W');
+        Result<String, ?> result = parser.parse(stream);
+
+        String item = result.getOrThrow();
+
+        assertEquals("Hello", item);
+    }
+
+    @Test(expected = ParserError.class)
+    public void testExceptionFailureBase() {
+        StringParserStream stream = new StringParserStream("Hello World");
+        StringParser<String> parser = exception(
+                string("World"),
+                str -> str.charAt(0) == 'W');
+        Result<String, ?> result = parser.parse(stream);
+
+        result.getOrThrow();
+    }
+
+    @Test(expected = ParserError.class)
+    public void testExceptionFailureExcept() {
+        StringParserStream stream = new StringParserStream("Hello World");
+        StringParser<String> parser = exception(
+                string("Hello"),
+                str -> str.charAt(0) == 'H');
+        Result<String, ?> result = parser.parse(stream);
+
+        result.getOrThrow();
+    }
 }
