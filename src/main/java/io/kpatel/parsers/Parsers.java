@@ -1,8 +1,8 @@
 package io.kpatel.parsers;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import io.kpatel.parsers.string.StringParsers;
+
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -424,6 +424,25 @@ public final class Parsers {
     }
 
     /**
+     * WHAT: Parse the given Character
+     *
+     * @see StringParsers#character(Predicate, Supplier)
+     */
+    public static <Seq, Itm> Parser<Itm, Seq, Itm> terminalItem(Itm target, Supplier<String> errorMessage) {
+        return terminalItem(target::equals, errorMessage);
+    }
+
+    /**
+     * WHAT: Parse Any Character from the given String
+     *
+     * @see StringParsers#character(Predicate, Supplier)
+     */
+    public static <Seq, Itm> Parser<Itm, Seq, Itm> terminalItem(Collection<Itm> items, Supplier<String> errorMessage) {
+        Set<Itm> itemSet = new HashSet<>(items);
+        return terminalItem(itemSet::contains, errorMessage);
+    }
+
+    /**
      * WHAT: Parse as sequence of items
      */
     public static <Seq, Itm>
@@ -444,7 +463,7 @@ public final class Parsers {
      * WHAT: Parse a run of item that satisfy a given predicate, Will always succeed
      */
     public static <Seq, Itm>
-    Parser<Seq, Seq, Itm> terminalRun(
+    Parser<Seq, Seq, Itm> terminalOptionalRun(
             Predicate<Itm> predicate,
             Function<Seq, Integer> measureLength) {
         return stream -> {
@@ -453,6 +472,47 @@ public final class Parsers {
             return Result.success(run, stream.jump(size));
         };
     }
+
+    /**
+     * WHAT: Parse a run of given character, Will always succeed
+     */
+    public static <Seq, Itm> Parser<Seq, Seq, Itm> terminalOptionalRun(Itm target, Function<Seq, Integer> measureLength) {
+        return terminalOptionalRun(target::equals, measureLength);
+    }
+
+    /**
+     * WHAT: Parse a run of any character from the give string, Will always succeed
+     */
+    public static <Seq, Itm> Parser<Seq, Seq, Itm> terminalOptionalRun(Collection<Itm> items, Function<Seq, Integer> measureLength) {
+        Set<Itm> itemSet = new HashSet<>(items);
+        return terminalOptionalRun(itemSet::contains, measureLength);
+    }
+
+    /**
+     * WHAT: Parse a run of characters that satisfy a given predicate, Will fail is nothing is found
+     */
+    public static <Seq, Itm> Parser<Seq, Seq, Itm> terminalRun(Predicate<Itm> predicate, Function<Seq, Integer> measureLength, Supplier<String> errorMessage) {
+        return Parsers.<Itm, Seq, Itm>peek(Parsers.terminalItem(predicate, errorMessage))
+                .chain(t -> Parsers.terminalOptionalRun(predicate, measureLength));
+    }
+
+    /**
+     * WHAT: Parse a run of given character, Will fail is nothing is found
+     */
+    public static <Seq, Itm> Parser<Seq, Seq, Itm> terminalRun(Itm target, Function<Seq, Integer> measureLength, Supplier<String> errorMessage) {
+        return Parsers.<Itm, Seq, Itm>peek(Parsers.terminalItem(target, errorMessage))
+                .chain(t -> Parsers.terminalOptionalRun(target, measureLength));
+    }
+
+    /**
+     * WHAT: Parse a run of any character from the give string, Will fail is nothing is found
+     */
+    public static <Seq, Itm> Parser<Seq, Seq, Itm> terminalRun(Collection<Itm> items, Function<Seq, Integer> measureLength, Supplier<String> errorMessage) {
+        Set<Itm> itemSet = new HashSet<>(items);
+        return Parsers.<Itm, Seq, Itm>peek(Parsers.terminalItem(itemSet::contains, errorMessage))
+                .chain(t -> Parsers.terminalOptionalRun(itemSet::contains, measureLength));
+    }
+
 
     private static <T> List<T> newList() {
         return new ArrayList<>();

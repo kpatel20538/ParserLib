@@ -1,8 +1,17 @@
 package io.kpatel.parsers.list;
 
+import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.Parsers;
+import io.kpatel.parsers.string.StringParsers;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+
+import static io.kpatel.parsers.Parsers.endOfStream;
+import static io.kpatel.parsers.Parsers.postfix;
 
 /**
  * WHAT: Specialized Helper Function for Parsing List of Tokens
@@ -18,79 +27,101 @@ public final class ListParsers {
     }
 
     /**
-     * WHAT: Forward to Generic Helper Function
-     *
-     * @see Parsers#endOfStream
+     * WHAT: Helper Function to parse a full string
      */
-    public static <Tkn> ListParser<Void, Tkn> endOfStream() {
-        return (ListParser<Void, Tkn>) Parsers.<List<Tkn>, Tkn>endOfStream();
+    public static <T, Tkn> T runParser(
+            Parser<T, List<Tkn>, Tkn> parser,
+            List<Tkn> sequence) {
+        return postfix(parser, endOfStream())
+                .parse(new ListParserStream<>(sequence))
+                .getOrThrow();
     }
 
     /**
-     * WHAT: Forward to Generic Helper Function
+     * WHAT: Parse a Token that satisfy a given predicate
      *
-     * @see Parsers#prefix
+     * @see Parsers#terminalItem
      */
-    public static <T, Tkn> ListParser<T, Tkn> withPrefix(
-            ListParser<?, Tkn> prefix,
-            ListParser<T, Tkn> parser) {
-        return (ListParser<T, Tkn>) Parsers.prefix(prefix, parser);
+    public static <Tkn> Parser<Tkn, List<Tkn>, Tkn> token(
+            Predicate<Tkn> predicate,
+            Supplier<String> errorMessage) {
+        return Parsers.terminalItem(predicate, errorMessage);
     }
 
     /**
-     * WHAT: Forward to Generic Helper Function
+     * WHAT: Parse the given Token by Token.equals
      *
-     * @see Parsers#postfix
+     * @see StringParsers#character(Predicate, Supplier)
      */
-    public static <T, Tkn> ListParser<T, Tkn> withPostfix(
-            ListParser<T, Tkn> parser,
-            ListParser<?, Tkn> postfix) {
-        return (ListParser<T, Tkn>) Parsers.postfix(parser, postfix);
+    public static <Tkn> Parser<Tkn, List<Tkn>, Tkn> token(
+            Tkn target, Supplier<String> errorMessage) {
+        return Parsers.terminalItem(target::equals, errorMessage);
     }
 
     /**
-     * WHAT: Forward to Generic Helper Function
+     * WHAT: Parse Any Token from the collection by Token.equals
      *
-     * @see Parsers#between
+     * @see StringParsers#character(Predicate, Supplier)
      */
-    public static <T, Tkn> ListParser<T, Tkn> between(
-            ListParser<?, Tkn> prefix,
-            ListParser<T, Tkn> parser,
-            ListParser<?, Tkn> postfix) {
-        return (ListParser<T, Tkn>) Parsers.between(prefix, parser, postfix);
+    public static <Tkn> Parser<Tkn, List<Tkn>, Tkn> token(
+            Collection<Tkn> tokens, Supplier<String> errorMessage) {
+        return Parsers.terminalItem(tokens, errorMessage);
     }
 
-    //TODO: EndOfStream
-    //TODO: Peek
-    //TODO: Alternate
+    /**
+     * WHAT: Parse List of Tokens by Token.equals
+     *
+     * @see Parsers#terminalSequence(Object, Function, Supplier)
+     */
+    public static <Tkn> Parser<List<Tkn>, List<Tkn>, Tkn> sequence(
+            List<Tkn> sequence, Supplier<String> errorMessage) {
+        return Parsers.terminalSequence(sequence, List::size, errorMessage);
+    }
 
-    //TODO: Prefix
-    //TODO: Postfix
-    //TODO: Between
+    /**
+     * WHAT: Parse a run of Tokens that satisfy a given predicate, Will fail is nothing is found
+     */
+    public static <Tkn> Parser<List<Tkn>, List<Tkn>, Tkn> run(
+            Predicate<Tkn> predicate,
+            Supplier<String> errorMessage) {
+        return Parsers.terminalRun(predicate, List::size, errorMessage);
+    }
 
-    //TODO: String Concatenate
-    //TODO: List Concatenate
-    //TODO: Generic Concatenate
+    /**
+     * WHAT: Parse a run of the given Token using Token.equals, Will fail is nothing is found
+     */
+    public static <Tkn> Parser<List<Tkn>, List<Tkn>, Tkn> run(
+            Tkn target, Supplier<String> errorMessage) {
+        return Parsers.terminalRun(target, List::size, errorMessage);
+    }
 
-    //TODO: String OneOrMore
-    //TODO: List OneOrMore
-    //TODO: Generic OneOrMore
+    /**
+     * WHAT: Parse a run of any Token from the give Collection using Token.equals, Will fail is nothing is found
+     */
+    public static <Tkn> Parser<List<Tkn>, List<Tkn>, Tkn> run(
+            Collection<Tkn> tokens,
+            Supplier<String> errorMessage) {
+        return Parsers.terminalRun(tokens, List::size, errorMessage);
+    }
 
-    //TODO: String ZeroOrMore
-    //TODO: List ZeroOrMore
-    //TODO: Generic ZeroOrMore
+    /**
+     * WHAT:  Parse a run of Tokens that satisfy a given predicate, Will always succeed
+     */
+    public static <Tkn> Parser<List<Tkn>, List<Tkn>, Tkn> optionalRun(Predicate<Tkn> predicate) {
+        return Parsers.terminalOptionalRun(predicate, List::size);
+    }
 
-    //TODO: String Delimited
-    //TODO: List Delimited
-    //TODO: Generic Delimited
+    /**
+     * WHAT: Parse a run of the given Token using Token.equals, Will always succeed
+     */
+    public static <Tkn> Parser<List<Tkn>, List<Tkn>, Tkn> optionalRun(Tkn target) {
+        return Parsers.terminalOptionalRun(target, List::size);
+    }
 
-    //TODO: String Optional
-    //TODO: Generic Optional
-
-    //TODO: String Omit
-    //TODO: Generic Omit
-
-    //TODO: Terminal Item
-    //TODO: Terminal Run
-    //TODO: Terminal Sequence
+    /**
+     * WHAT: Parse a run of any Token from the give Collection using Token.equals, Will always succeed
+     */
+    public static <Tkn> Parser<List<Tkn>, List<Tkn>, Tkn> optionalRun(Collection<Tkn> tokens) {
+        return Parsers.terminalOptionalRun(tokens, List::size);
+    }
 }

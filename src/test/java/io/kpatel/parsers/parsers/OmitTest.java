@@ -1,17 +1,21 @@
-package io.kpatel.parsers.string;
+package io.kpatel.parsers.parsers;
 
+import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.ParserError;
 import io.kpatel.parsers.Result;
+import io.kpatel.parsers.string.StringParserStream;
 import org.junit.Test;
 
-import static io.kpatel.parsers.string.StringParsers.*;
+import static io.kpatel.parsers.Parsers.omit;
+import static io.kpatel.parsers.string.StringParsers.character;
+import static io.kpatel.parsers.string.StringParsers.string;
 import static org.junit.Assert.assertEquals;
 
-public class StringParsersOmitTest {
+public class OmitTest {
     @Test
     public void testStringOmitSuccess() {
         StringParserStream stream = new StringParserStream("Hello World");
-        StringParser<String> parser = omit(string("Hello"));
+        Parser<String, String, Character> parser = omit(string("Hello"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -22,16 +26,16 @@ public class StringParsersOmitTest {
     @Test(expected = ParserError.class)
     public void testStringOmitFailure() {
         StringParserStream stream = new StringParserStream("Hello");
-        StringParser<String> parser = omit(string("World"));
+        Parser<String, String, Character> parser = omit(string("World"));
         Result<String, ?> result = parser.parse(stream);
 
-        String item = result.getOrThrow();
+        result.getOrThrow();
     }
 
     @Test
     public void testGenericOmitSuccess() {
         StringParserStream stream = new StringParserStream("Hello World");
-        StringParser<Character> parser = omit(character('H'), () -> '\0');
+        Parser<Character, String, Character> parser = omit(character('H'), () -> '\0');
         Result<Character, ?> result = parser.parse(stream);
 
         Character item = result.getOrThrow();
@@ -42,9 +46,9 @@ public class StringParsersOmitTest {
     @Test(expected = ParserError.class)
     public void testGenericOmitFailure() {
         StringParserStream stream = new StringParserStream("Hello World");
-        StringParser<Character> parser = omit(character('W'), () -> '\0');
+        Parser<Character, String, Character> parser = omit(character('W'), () -> '\0');
         Result<Character, ?> result = parser.parse(stream);
 
-        Character item = result.getOrThrow();
+        result.getOrThrow();
     }
 }

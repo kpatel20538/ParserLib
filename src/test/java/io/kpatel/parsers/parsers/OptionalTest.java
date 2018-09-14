@@ -1,16 +1,20 @@
-package io.kpatel.parsers.string;
+package io.kpatel.parsers.parsers;
 
+import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.Result;
+import io.kpatel.parsers.string.StringParserStream;
 import org.junit.Test;
 
-import static io.kpatel.parsers.string.StringParsers.*;
+import static io.kpatel.parsers.Parsers.optional;
+import static io.kpatel.parsers.string.StringParsers.character;
+import static io.kpatel.parsers.string.StringParsers.string;
 import static org.junit.Assert.assertEquals;
 
-public class StringParsersOptionalTest {
+public class OptionalTest {
     @Test
     public void testStringOptionalSuccess() {
         StringParserStream stream = new StringParserStream("Hello World");
-        StringParser<String> parser = optional(string("Hello"));
+        Parser<String, String, Character> parser = optional(string("Hello"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -21,7 +25,7 @@ public class StringParsersOptionalTest {
     @Test
     public void testStringOptionalFailure() {
         StringParserStream stream = new StringParserStream("Hello");
-        StringParser<String> parser = optional(string("World"));
+        Parser<String, String, Character> parser = optional(string("World"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -32,7 +36,7 @@ public class StringParsersOptionalTest {
     @Test
     public void testGenericOptionalSuccess() {
         StringParserStream stream = new StringParserStream("Hello World");
-        StringParser<Character> parser = optional(character('H'), () -> '\0');
+        Parser<Character, String, Character> parser = optional(character('H'), () -> '\0');
         Result<Character, ?> result = parser.parse(stream);
 
         Character item = result.getOrThrow();
@@ -43,7 +47,7 @@ public class StringParsersOptionalTest {
     @Test
     public void testGenericOptionalFailure() {
         StringParserStream stream = new StringParserStream("Hello World");
-        StringParser<Character> parser = optional(character('W'), () -> '\0');
+        Parser<Character, String, Character> parser = optional(character('W'), () -> '\0');
         Result<Character, ?> result = parser.parse(stream);
 
         Character item = result.getOrThrow();

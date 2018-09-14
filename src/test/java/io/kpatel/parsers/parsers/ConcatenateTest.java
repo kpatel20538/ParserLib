@@ -1,20 +1,22 @@
-package io.kpatel.parsers.string;
+package io.kpatel.parsers.parsers;
 
+import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.ParserError;
 import io.kpatel.parsers.Result;
+import io.kpatel.parsers.string.StringParserStream;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static io.kpatel.parsers.string.StringParsers.concatenateString;
+import static io.kpatel.parsers.Parsers.concatenateString;
 import static io.kpatel.parsers.string.StringParsers.string;
 import static org.junit.Assert.assertEquals;
 
-public class StringParsersConcatenateTest {
+public class ConcatenateTest {
     @Test
     public void testConcatStringSuccess() {
         StringParserStream stream = new StringParserStream("Hello World Foobar");
-        StringParser<String> parser = concatenateString(Arrays.asList(
+        Parser<String, String, Character> parser = concatenateString(Arrays.asList(
                 string("Hello "),
                 string("World "),
                 string("Foobar")));
@@ -28,7 +30,7 @@ public class StringParsersConcatenateTest {
     @Test(expected = ParserError.class)
     public void testConcatStringFirstFailure() {
         StringParserStream stream = new StringParserStream("Hello World Foobar");
-        StringParser<String> parser = concatenateString(Arrays.asList(
+        Parser<String, String, Character> parser = concatenateString(Arrays.asList(
                 string("World "),
                 string("World "),
                 string("Foobar")));
@@ -40,7 +42,7 @@ public class StringParsersConcatenateTest {
     @Test(expected = ParserError.class)
     public void testConcatStringSecondFailure() {
         StringParserStream stream = new StringParserStream("Hello World Foobar");
-        StringParser<String> parser = concatenateString(Arrays.asList(
+        Parser<String, String, Character> parser = concatenateString(Arrays.asList(
                 string("Hello "),
                 string("Foobar "),
                 string("Foobar")));
@@ -52,7 +54,7 @@ public class StringParsersConcatenateTest {
     @Test(expected = ParserError.class)
     public void testConcatStringThirdFailure() {
         StringParserStream stream = new StringParserStream("Hello World Foobar");
-        StringParser<String> parser = concatenateString(Arrays.asList(
+        Parser<String, String, Character> parser = concatenateString(Arrays.asList(
                 string("Hello "),
                 string("World "),
                 string("Hello")));

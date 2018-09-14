@@ -1,17 +1,22 @@
-package io.kpatel.parsers.string;
+package io.kpatel.parsers.parsers;
 
+import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.ParserError;
+import io.kpatel.parsers.ParserStream;
 import io.kpatel.parsers.Result;
+import io.kpatel.parsers.string.StringParserStream;
 import org.junit.Test;
 
-import static io.kpatel.parsers.string.StringParsers.*;
+import static io.kpatel.parsers.Parsers.*;
+import static io.kpatel.parsers.string.StringParsers.character;
+import static io.kpatel.parsers.string.StringParsers.string;
 import static org.junit.Assert.assertEquals;
 
-public class StringParsersAffixTest {
+public class AffixTest {
     @Test
     public void testPrefixSuccess() {
-        StringParserStream stream = new StringParserStream("int x");
-        StringParser<Character> parser = prefix(
+        ParserStream<String, Character> stream = new StringParserStream("int x");
+        Parser<Character, String, Character> parser = prefix(
                 string("int "),
                 character(Character::isLetter, () -> "Cannot Find Letter"));
         Result<Character, ?> result = parser.parse(stream);
@@ -23,8 +28,8 @@ public class StringParsersAffixTest {
 
     @Test(expected = ParserError.class)
     public void testPrefixFailurePrefix() {
-        StringParserStream stream = new StringParserStream("float x");
-        StringParser<Character> parser = prefix(
+        ParserStream<String, Character> stream = new StringParserStream("float x");
+        Parser<Character, String, Character> parser = prefix(
                 string("int "),
                 character(Character::isLetter, () -> "Cannot Find Letter"));
         Result<Character, ?> result = parser.parse(stream);
@@ -34,8 +39,8 @@ public class StringParsersAffixTest {
 
     @Test(expected = ParserError.class)
     public void testPrefixFailureRoot() {
-        StringParserStream stream = new StringParserStream("int 1");
-        StringParser<Character> parser = prefix(
+        ParserStream<String, Character> stream = new StringParserStream("int 1");
+        Parser<Character, String, Character> parser = prefix(
                 string("int "),
                 character(Character::isLetter, () -> "Cannot Find Letter"));
         Result<Character, ?> result = parser.parse(stream);
@@ -46,7 +51,7 @@ public class StringParsersAffixTest {
     @Test
     public void testPostfixSuccess() {
         StringParserStream stream = new StringParserStream("x;");
-        StringParser<Character> parser = postfix(
+        Parser<Character, String, Character> parser = postfix(
                 character(Character::isLetter, () -> "Cannot Find Letter"),
                 string(";"));
         Result<Character, ?> result = parser.parse(stream);
@@ -59,7 +64,7 @@ public class StringParsersAffixTest {
     @Test(expected = ParserError.class)
     public void testPostfixFailurePostfix() {
         StringParserStream stream = new StringParserStream("x,");
-        StringParser<Character> parser = postfix(
+        Parser<Character, String, Character> parser = postfix(
                 character(Character::isLetter, () -> "Cannot Find Letter"),
                 string(";"));
         Result<Character, ?> result = parser.parse(stream);
@@ -70,7 +75,7 @@ public class StringParsersAffixTest {
     @Test(expected = ParserError.class)
     public void testPostfixFailureRoot() {
         StringParserStream stream = new StringParserStream("1;");
-        StringParser<Character> parser = postfix(
+        Parser<Character, String, Character> parser = postfix(
                 character(Character::isLetter, () -> "Cannot Find Letter"),
                 string(";"));
         Result<Character, ?> result = parser.parse(stream);
@@ -81,7 +86,7 @@ public class StringParsersAffixTest {
     @Test
     public void testBetweenSuccess() {
         StringParserStream stream = new StringParserStream("int x;");
-        StringParser<Character> parser = between(
+        Parser<Character, String, Character> parser = between(
                 string("int "),
                 character(Character::isLetter, () -> "Cannot Find Letter"),
                 string(";"));
@@ -95,7 +100,7 @@ public class StringParsersAffixTest {
     @Test(expected = ParserError.class)
     public void testBetweenFailurePrefix() {
         StringParserStream stream = new StringParserStream("float x;");
-        StringParser<Character> parser = between(
+        Parser<Character, String, Character> parser = between(
                 string("int "),
                 character(Character::isLetter, () -> "Cannot Find Letter"),
                 string(";"));
@@ -107,7 +112,7 @@ public class StringParsersAffixTest {
     @Test(expected = ParserError.class)
     public void testBetweenFailurePostfix() {
         StringParserStream stream = new StringParserStream("int x,");
-        StringParser<Character> parser = between(
+        Parser<Character, String, Character> parser = between(
                 string("int "),
                 character(Character::isLetter, () -> "Cannot Find Letter"),
                 string(";"));
@@ -119,7 +124,7 @@ public class StringParsersAffixTest {
     @Test(expected = ParserError.class)
     public void testBetweenFailureRoot() {
         StringParserStream stream = new StringParserStream("int 1;");
-        StringParser<Character> parser = between(
+        Parser<Character, String, Character> parser = between(
                 string("int "),
                 character(Character::isLetter, () -> "Cannot Find Letter"),
                 string(";"));
