@@ -1,6 +1,5 @@
-package io.kpatel.parsers;
+package io.kpatel.parsers.string;
 
-import io.kpatel.parsers.string.StringParserStream;
 import org.junit.Test;
 
 import java.util.Optional;

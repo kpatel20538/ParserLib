@@ -1,6 +1,5 @@
-package io.kpatel.parsers;
+package io.kpatel.parsers.list;
 
-import io.kpatel.parsers.list.ListParserStream;
 import org.junit.Test;
 
 import java.util.Arrays;

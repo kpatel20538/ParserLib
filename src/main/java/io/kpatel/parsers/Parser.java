@@ -16,16 +16,19 @@ import java.util.function.Supplier;
  * - ParserStream, A Generalization of Immutable Linear Structures
  */
 @FunctionalInterface
-public interface Parser<T, Strm extends ParserStream<Strm,Seq,Itm>, Seq, Itm> {
-    /** WHAT: A SAM Interface
-     *   WHY: Make use of Lambda Expressions for Simple Construction
+public interface Parser<T, Strm extends ParserStream<Strm, Seq, Itm>, Seq, Itm> {
+    /**
+     * WHAT: A SAM Interface
+     * WHY: Make use of Lambda Expressions for Simple Construction
      */
     Result<T, Strm> parse(Strm stream);
 
-    /** WHAT: Deferring to Result object
-     *        Transform result value w/o altering the stream w/ no chance of Failure
-     *   WHY: Composing Operations for Success to Success Case
-     *  @see Result#map
+    /**
+     * WHAT: Deferring to Result object
+     * Transform result value w/o altering the stream w/ no chance of Failure
+     * WHY: Composing Operations for Success to Success Case
+     *
+     * @see Result#map
      */
     default <U> Parser<U, Strm, Seq, Itm> map(Function<T, U> mapper) {
         return stream -> parse(stream).chain((t, remaining) -> Result.success(mapper.apply(t), remaining));
@@ -42,10 +45,12 @@ public interface Parser<T, Strm extends ParserStream<Strm,Seq,Itm>, Seq, Itm> {
         return stream -> parse(stream).chain((t, remaining) -> flatMapper.apply(t).parse(remaining));
     }
 
-    /** WHAT: Deferring to Result object
-     *        Transform Failure to Success and rollback stream
-     *   WHY: Composing Operations for Failure to Success/Failure Case
-     *   @see Result#orElse
+    /**
+     * WHAT: Deferring to Result object
+     * Transform Failure to Success and rollback stream
+     * WHY: Composing Operations for Failure to Success/Failure Case
+     *
+     * @see Result#orElse
      */
     default Parser<T, Strm, Seq, Itm> orElse(Supplier<Parser<T, Strm, Seq, Itm>> alternative) {
         return stream -> parse(stream).orElse(() -> alternative.get().parse(stream));

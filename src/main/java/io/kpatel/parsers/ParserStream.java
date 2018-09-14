@@ -19,10 +19,14 @@ import java.util.function.Predicate;
  * - Deferring ParserStream::getLeadingSequence and ParserStream::getLeadingRun to StringParserStream
  */
 public interface ParserStream<Self, Seq, Itm> {
-    /** WHY: Non Destructive Query Operation for Items */
+    /**
+     * WHY: Non Destructive Query Operation for Items
+     */
     Optional<Itm> getLeadingItem();
 
-    /** WHY: Non Destructive Query Operation for End of Stream */
+    /**
+     * WHY: Non Destructive Query Operation for End of Stream
+     */
     default boolean atEndOfStream() {
         return !getLeadingItem().isPresent();
     }
@@ -32,12 +36,18 @@ public interface ParserStream<Self, Seq, Itm> {
      */
     Seq getLeadingSequence(int length);
 
-    /** WHY: Non Destructive Query Operation for Variable-Length SubSequences */
+    /**
+     * WHY: Non Destructive Query Operation for Variable-Length SubSequences
+     */
     Seq getLeadingRun(Predicate<Itm> predicate);
 
-    /** WHY: Forward Seek, Needs to Self-Recurring Generics to Preserve Extensibility */
+    /**
+     * WHY: Forward Seek, Needs to Self-Recurring Generics to Preserve Extensibility
+     */
     Self jump(int n);
 
-    /** WHY: Provide Context When  an Error Occurs */
+    /**
+     * WHY: Provide Context When  an Error Occurs
+     */
     String getErrorHeader();
 }
