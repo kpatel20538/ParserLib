@@ -11,9 +11,9 @@ import static org.junit.Assert.*;
 public class StringStreamTest {
     @Test
     public void testLeadingItemPresent() {
-        StringStream stream = new StringStream("Hello");
+        var stream = new StringStream("Hello");
 
-        Optional<Character> character = stream.getLeadingItem();
+        var character = stream.getLeadingItem();
 
         assertTrue(character.isPresent());
         assertEquals(Character.valueOf('H'), character.get());
@@ -21,32 +21,32 @@ public class StringStreamTest {
 
     @Test
     public void testLeadingItemEmpty() {
-        StringStream stream = new StringStream("");
+        var stream = new StringStream("");
 
-        Optional<Character> character = stream.getLeadingItem();
+        var character = stream.getLeadingItem();
 
         assertFalse(character.isPresent());
     }
 
     @Test
     public void testNonEmptyStream() {
-        StringStream stream = new StringStream("Hello");
+        var stream = new StringStream("Hello");
 
         assertFalse(stream.atEndOfStream());
     }
 
     @Test
     public void testEmptyStream() {
-        StringStream stream = new StringStream("");
+        var stream = new StringStream("");
 
         assertTrue(stream.atEndOfStream());
     }
 
     @Test
     public void testLeadingSequence() {
-        StringStream stream = new StringStream("Hello World");
+        var stream = new StringStream("Hello World");
 
-        SequenceHolder<String> sequence = stream.getLeadingSequence(5);
+        var sequence = stream.getLeadingSequence(5);
 
         assertEquals("Hello", sequence.getSequence());
         assertEquals(5, sequence.getLength());
@@ -54,9 +54,9 @@ public class StringStreamTest {
 
     @Test
     public void testLargeLeadingSequence() {
-        StringStream stream = new StringStream("Hello World");
+        var stream = new StringStream("Hello World");
 
-        SequenceHolder<String> sequence = stream.getLeadingSequence(100);
+        var sequence = stream.getLeadingSequence(100);
 
         assertEquals("Hello World", sequence.getSequence());
         assertEquals(11, sequence.getLength());
@@ -64,9 +64,9 @@ public class StringStreamTest {
 
     @Test
     public void testNegativeLeadingSequence() {
-        StringStream stream = new StringStream("Hello World");
+        var stream = new StringStream("Hello World");
 
-        SequenceHolder<String> sequence = stream.getLeadingSequence(-100);
+        var sequence = stream.getLeadingSequence(-100);
 
         assertEquals("", sequence.getSequence());
         assertEquals(0, sequence.getLength());
@@ -74,9 +74,9 @@ public class StringStreamTest {
 
     @Test
     public void testLeadingRun() {
-        StringStream stream = new StringStream("Hello World");
+        var stream = new StringStream("Hello World");
 
-        SequenceHolder<String> run = stream.getLeadingRun(Character::isAlphabetic);
+        var run = stream.getLeadingRun(Character::isAlphabetic);
 
         assertEquals("Hello", run.getSequence());
         assertEquals(5, run.getLength());

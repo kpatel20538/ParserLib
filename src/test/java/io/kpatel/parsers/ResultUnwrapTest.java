@@ -8,8 +8,8 @@ import static org.junit.Assert.*;
 public class ResultUnwrapTest {
     @Test
     public void testGetOrThrowSuccess() {
-        StringStream parserStream = new StringStream("");
-        Result<String, StringStream> result = Result.success("Hello", parserStream);
+        var parserStream = new StringStream("");
+        var result = Result.success("Hello", parserStream);
 
         String item = result.getOrThrow();
 
@@ -18,44 +18,44 @@ public class ResultUnwrapTest {
 
     @Test(expected = ParserError.class)
     public void testGetOrThrowFailure() {
-        StringStream parserStream = new StringStream("");
-        Result<String, StringStream> result = Result.failure("Error", parserStream);
+        var parserStream = new StringStream("");
+        var result = Result.failure("Error", parserStream);
 
         result.getOrThrow();
     }
 
     @Test
     public void testGetOrElseSuccess() {
-        StringStream parserStream = new StringStream("");
-        Result<String, StringStream> result = Result.success("Hello", parserStream);
+        var parserStream = new StringStream("");
+        var result = Result.success("Hello", parserStream);
 
-        String item = result.getOrElse(() -> "World");
+        var item = result.getOrElse(() -> "World");
 
         assertEquals("Hello", item);
     }
 
     @Test
     public void testGetOrElseFailure() {
-        StringStream parserStream = new StringStream("");
-        Result<String, StringStream> result = Result.failure("Error", parserStream);
+        var parserStream = new StringStream("");
+        var result = Result.failure("Error", parserStream);
 
-        String item = result.getOrElse(() -> "World");
+        var item = result.getOrElse(() -> "World");
 
         assertEquals("World", item);
     }
 
     @Test
     public void testIsSuccess() {
-        StringStream parserStream = new StringStream("");
-        Result<String, StringStream> result = Result.success("Hello", parserStream);
+        var parserStream = new StringStream("");
+        var result = Result.success("Hello", parserStream);
 
         assertTrue(result.isSuccess());
     }
 
     @Test
     public void testIsFailure() {
-        StringStream parserStream = new StringStream("");
-        Result<String, StringStream> result = Result.failure("Error", parserStream);
+        var parserStream = new StringStream("");
+        var result = Result.failure("Error", parserStream);
 
         assertFalse(result.isSuccess());
     }

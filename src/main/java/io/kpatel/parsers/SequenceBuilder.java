@@ -8,7 +8,7 @@ public interface SequenceBuilder<Bld, Prt, Out> {
     Out toOutput(Bld builder);
 
     default Bld getNewBuilder(Prt part) {
-        Bld builder = getNewBuilder();
+        var builder = getNewBuilder();
         return appendPart(builder, part);
     }
 }

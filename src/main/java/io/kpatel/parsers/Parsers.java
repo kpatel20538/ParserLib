@@ -1,10 +1,12 @@
 package io.kpatel.parsers;
 
-import io.kpatel.parsers.list.ListSequenceBuilder;
+import io.kpatel.parsers.builder.ListSequenceBuilder;
+import io.kpatel.parsers.builder.MapSequenceBuilder;
+import io.kpatel.parsers.builder.StringSequenceBuilder;
 import io.kpatel.parsers.string.StringParsers;
-import io.kpatel.parsers.string.StringSequenceBuilder;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -54,8 +56,29 @@ public final class Parsers {
         return (stream) -> parser.parse(stream).chain((item, stream1) ->
                 except.test(item)
                         ? Result.failure("Parser result was in exception case", stream)
-                        : Result.success(item, stream1)
-        );
+                        : Result.success(item, stream1));
+    }
+
+    /**
+     * WHAT: Parse with entry
+     */
+    public static <K, V, Seq, Itm>
+    Parser<Map.Entry<K, V>, Seq, Itm> entry(
+            Parser<K, Seq, Itm> key,
+            Parser<V, Seq, Itm> value) {
+        return key.chain(k -> value.map(v -> Map.entry(k, v)));
+    }
+
+    /**
+     * WHAT: Parse with entry
+     */
+    public static <K, V, T, Seq, Itm>
+    Parser<T, Seq, Itm> pipe(
+            Parser<K, Seq, Itm> left,
+            Parser<V, Seq, Itm> right,
+            BiFunction<K, V, T> mapper
+    ) {
+        return left.chain(l -> right.map(r -> mapper.apply(l, r)));
     }
 
     /**
@@ -65,13 +88,16 @@ public final class Parsers {
     Parser<T, Seq, Itm> alternate(List<? extends Parser<T, Seq, Itm>> parsers) {
         ArrayList<? extends Parser<T, Seq, Itm>> parserList = new ArrayList<>(parsers);
         return (stream) -> {
-            Result<T, ParserStream<Seq, Itm>> result = Result.failure("No Parsers To Alternate with.", stream);
+            var result = Result.<T, Seq, Itm>
+                    failure("No Parsers To Alternate with.", stream);
+
             for (Parser<T, Seq, Itm> parser : parserList) {
                 result = result.orElse(() -> parser.parse(stream));
             }
             return result;
         };
     }
+
 
     /**
      * WHAT: Parse until all parsers succeeds or one parser fail and join the results to the empty string
@@ -92,6 +118,15 @@ public final class Parsers {
     }
 
     /**
+     * WHAT: Parse until all parsers succeeds or one parser fail and join the results to the empty map
+     */
+    public static <K, V, Seq, Itm>
+    Parser<Map<K, V>, Seq, Itm> concatenateMap(
+            List<? extends Parser<Map.Entry<K, V>, Seq, Itm>> parsers) {
+        return Parsers.concatenate(new MapSequenceBuilder<>(), parsers);
+    }
+
+    /**
      * WHAT: Parse until all parsers succeeds or one parser fail and join the results to the empty case
      */
     public static <Bld, T, Out, Seq, Itm>
@@ -100,12 +135,13 @@ public final class Parsers {
             List<? extends Parser<T, Seq, Itm>> parsers) {
         ArrayList<? extends Parser<T, Seq, Itm>> parserList = new ArrayList<>(parsers);
         return (stream) -> {
-            Result<Bld, ParserStream<Seq, Itm>> result = Result.success(sequenceBuilder.getNewBuilder(), stream);
+            var builder = sequenceBuilder.getNewBuilder();
+            var result = Result.success(builder, stream);
+
             for (Parser<T, Seq, Itm> parser : parserList) {
-                result = result.chain((bld, remaining) -> parser.parse(remaining)
-                        .map((itm, stream1) -> sequenceBuilder.appendPart(bld, itm)));
+                result = appendToResult(sequenceBuilder, parser, result);
             }
-            return result.map((bld, stream1) -> sequenceBuilder.toOutput(bld));
+            return result.map(sequenceBuilder::toOutput);
         };
     }
 
@@ -126,6 +162,14 @@ public final class Parsers {
     }
 
     /**
+     * WHAT: Parse a parser until it fails and join the results to the empty map
+     */
+    public static <K, V, Seq, Itm>
+    Parser<Map<K, V>, Seq, Itm> zeroOrMoreMap(Parser<Map.Entry<K, V>, Seq, Itm> parser) {
+        return Parsers.zeroOrMore(new MapSequenceBuilder<>(), parser);
+    }
+
+    /**
      * WHAT: Parse a parser until it fails and join the results to the empty case
      */
 
@@ -134,16 +178,15 @@ public final class Parsers {
             SequenceBuilder<Bld, T, Out> sequenceBuilder,
             Parser<T, Seq, Itm> parser) {
         return (stream) -> {
-            Bld builder = sequenceBuilder.getNewBuilder();
-            Result<Bld, ParserStream<Seq, Itm>> prevResult = Result.success(builder, stream);
-            Result<Bld, ParserStream<Seq, Itm>> result = prevResult;
+            var builder = sequenceBuilder.getNewBuilder();
+            var result = Result.success(builder, stream);
+            var nextResult = result;
 
-            while (result.isSuccess()) {
-                prevResult = result;
-                result = result.chain((bld, stream1) -> parser.parse(stream1)
-                        .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
+            while (nextResult.isSuccess()) {
+                result = nextResult;
+                nextResult = appendToResult(sequenceBuilder, parser, nextResult);
             }
-            return prevResult.map((bld, stream1) -> sequenceBuilder.toOutput(bld));
+            return result.map(sequenceBuilder::toOutput);
         };
     }
 
@@ -166,6 +209,15 @@ public final class Parsers {
     }
 
     /**
+     * WHAT: Parse a parser until it fails and join the results to the empty map, requires at least one
+     */
+    public static <K, V, Seq, Itm>
+    Parser<Map<K, V>, Seq, Itm> oneOrMoreMap(
+            Parser<Map.Entry<K, V>, Seq, Itm> parser) {
+        return oneOrMore(new MapSequenceBuilder<>(), parser);
+    }
+
+    /**
      * WHAT: Parse a parser until it fails and join the results to the empty case, requires at least one
      */
     public static <Bld, T, Out, Seq, Itm>
@@ -173,16 +225,15 @@ public final class Parsers {
             SequenceBuilder<Bld, T, Out> sequenceBuilder,
             Parser<T, Seq, Itm> parser) {
         return (stream) -> {
-            Result<Bld, ParserStream<Seq, Itm>> prevResult = parser.parse(stream)
-                    .map((part, stream1) -> sequenceBuilder.getNewBuilder(part));
-            Result<Bld, ParserStream<Seq, Itm>> result = prevResult;
+            var result = parser.parse(stream)
+                    .map(sequenceBuilder::getNewBuilder);
+            var nextResult = result;
 
-            while (result.isSuccess()) {
-                prevResult = result;
-                result = result.chain((bld, stream1) -> parser.parse(stream1)
-                        .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
+            while (nextResult.isSuccess()) {
+                result = nextResult;
+                nextResult = appendToResult(sequenceBuilder, parser, nextResult);
             }
-            return prevResult.map((bld, stream1) -> sequenceBuilder.toOutput(bld));
+            return result.map(sequenceBuilder::toOutput);
         };
     }
 
@@ -206,6 +257,13 @@ public final class Parsers {
         return delimited(new ListSequenceBuilder<>(), parser, delimiter);
     }
 
+    public static <K, V, Seq, Itm>
+    Parser<Map<K, V>, Seq, Itm> delimitedMap(
+            Parser<Map.Entry<K, V>, Seq, Itm> parser,
+            Parser<?, Seq, Itm> delimiter) {
+        return delimited(new MapSequenceBuilder<>(), parser, delimiter);
+    }
+
     /**
      * WHAT: Parse a parser until it fails and join the results to the empty case, requires at least one
      */
@@ -216,16 +274,15 @@ public final class Parsers {
             Parser<?, Seq, Itm> delimiter) {
         Parser<T, Seq, Itm> prefixedParser = prefix(delimiter, parser);
         Parser<Bld, Seq, Itm> delimitedParser = stream -> {
-            Result<Bld, ParserStream<Seq, Itm>> prevResult = parser.parse(stream)
-                    .map((part, stream1) -> sequenceBuilder.getNewBuilder(part));
-            Result<Bld, ParserStream<Seq, Itm>> result = prevResult;
+            var result = parser.parse(stream)
+                    .map(sequenceBuilder::getNewBuilder);
+            var nextResult = result;
 
-            while (result.isSuccess()) {
-                prevResult = result;
-                result = result.chain((bld, stream1) -> prefixedParser.parse(stream1)
-                        .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
+            while (nextResult.isSuccess()) {
+                result = nextResult;
+                nextResult = appendToResult(sequenceBuilder, prefixedParser, nextResult);
             }
-            return prevResult;
+            return result;
         };
         return optional(delimitedParser, sequenceBuilder::getNewBuilder)
                 .map(sequenceBuilder::toOutput);
@@ -250,6 +307,15 @@ public final class Parsers {
     }
 
     /**
+     * WHAT: Parses an exact number of an item and joins them to a list
+     */
+    public static <K, V, Seq, Itm>
+    Parser<Map<K, V>, Seq, Itm> repetitionMap(
+            int count, Parser<Map.Entry<K, V>, Seq, Itm> parser) {
+        return repetition(count, new MapSequenceBuilder<>(), parser);
+    }
+
+    /**
      * WHAT: Parses an exact number of an item and joins them together
      */
     public static <Bld, T, Out, Seq, Itm>
@@ -258,13 +324,13 @@ public final class Parsers {
             SequenceBuilder<Bld, T, Out> sequenceBuilder,
             Parser<T, Seq, Itm> parser) {
         return (stream) -> {
-            Bld builder = sequenceBuilder.getNewBuilder();
-            Result<Bld, ParserStream<Seq, Itm>> result = Result.success(builder, stream);
+            var builder = sequenceBuilder.getNewBuilder();
+            var result = Result.success(builder, stream);
+
             for (int i = 0; i < count && result.isSuccess(); i++) {
-                result = result.chain((bld, stream1) -> parser.parse(stream1)
-                        .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
+                result = appendToResult(sequenceBuilder, parser, result);
             }
-            return result.map(((bld, stream1) -> sequenceBuilder.toOutput(bld)));
+            return result.map((sequenceBuilder::toOutput));
         };
     }
 
@@ -289,6 +355,16 @@ public final class Parsers {
     }
 
     /**
+     * WHAT: Parses a range of an item and joins them to a map
+     */
+    public static <K, V, Seq, Itm>
+    Parser<Map<K, V>, Seq, Itm> repetitionMap(
+            int inclusiveLow, int inclusiveHigh,
+            Parser<Map.Entry<K, V>, Seq, Itm> parser) {
+        return repetition(inclusiveLow, inclusiveHigh, new MapSequenceBuilder<>(), parser);
+    }
+
+    /**
      * WHAT: Parses a range of an item and joins them together
      */
     public static <Bld, T, Out, Seq, Itm>
@@ -297,21 +373,20 @@ public final class Parsers {
             SequenceBuilder<Bld, T, Out> sequenceBuilder,
             Parser<T, Seq, Itm> parser) {
         return (stream) -> {
-            Bld builder = sequenceBuilder.getNewBuilder();
-            Result<Bld, ParserStream<Seq, Itm>> result = Result.success(builder, stream);
+            var builder = sequenceBuilder.getNewBuilder();
+            var result = Result.success(builder, stream);
             for (int i = 0; i < inclusiveLow && result.isSuccess(); i++) {
-                result = result.chain((bld, stream1) -> parser.parse(stream1)
-                        .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
+                result = appendToResult(sequenceBuilder, parser, result);
             }
+
             if (result.isSuccess()) {
-                Result<Bld, ParserStream<Seq, Itm>> nextResult = result;
+                var nextResult = result;
                 for (int i = inclusiveLow; i < inclusiveHigh && nextResult.isSuccess(); i++) {
                     result = nextResult;
-                    nextResult = result.chain((bld, stream1) -> parser.parse(stream1)
-                            .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
+                    nextResult = appendToResult(sequenceBuilder, parser, result);
                 }
             }
-            return result.map((bld, stream1) -> sequenceBuilder.toOutput(bld));
+            return result.map(sequenceBuilder::toOutput);
         };
     }
 
@@ -480,13 +555,12 @@ public final class Parsers {
                 .chain(t -> Parsers.optionalRun(itemSet::contains));
     }
 
-
-    private static <T> List<T> newList() {
-        return new ArrayList<>();
-    }
-
-    private static <T> List<T> appendList(List<T> list, T item) {
-        list.add(item);
-        return list;
+    private static <Bld, T, Out, Seq, Itm>
+    Result<Bld, Seq, Itm> appendToResult(
+            SequenceBuilder<Bld, T, Out> sequenceBuilder,
+            Parser<T, Seq, Itm> parser,
+            Result<Bld, Seq, Itm> result) {
+        return result.chain((bld, remaining) -> parser.parse(remaining)
+                .map((itm) -> sequenceBuilder.appendPart(bld, itm)));
     }
 }

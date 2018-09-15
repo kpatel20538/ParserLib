@@ -1,4 +1,4 @@
-package io.kpatel.parsers.string;
+package io.kpatel.parsers.builder;
 
 import io.kpatel.parsers.SequenceBuilder;
 

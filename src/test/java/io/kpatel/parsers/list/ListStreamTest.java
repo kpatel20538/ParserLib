@@ -1,13 +1,9 @@
 package io.kpatel.parsers.list;
 
-import io.kpatel.parsers.ParserStream;
-import io.kpatel.parsers.SequenceHolder;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 
 import static org.junit.Assert.*;
@@ -15,10 +11,10 @@ import static org.junit.Assert.*;
 public class ListStreamTest {
     @Test
     public void testLeadingItemPresent() {
-        ParserStream<List<Token>, Token> stream = new ListStream<>(Arrays.asList(
+        var stream = new ListStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O));
 
-        Optional<Token> token = stream.getLeadingItem();
+        var token = stream.getLeadingItem();
 
         assertTrue(token.isPresent());
         assertEquals(Token.H, token.get());
@@ -26,17 +22,16 @@ public class ListStreamTest {
 
     @Test
     public void testLeadingItemEmpty() {
-        ParserStream<List<Token>, Token> stream = new ListStream<>(
-                Collections.emptyList());
+        var stream = new ListStream<>(Collections.emptyList());
 
-        Optional<Token> token = stream.getLeadingItem();
+        var token = stream.getLeadingItem();
 
         assertFalse(token.isPresent());
     }
 
     @Test
     public void testNonEmptyStream() {
-        ParserStream<List<Token>, Token> stream = new ListStream<>(Arrays.asList(
+        var stream = new ListStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O));
 
         assertFalse(stream.atEndOfStream());
@@ -44,7 +39,7 @@ public class ListStreamTest {
 
     @Test
     public void testEmptyStream() {
-        ParserStream<List<Token>, Token> stream = new ListStream<>(
+        var stream = new ListStream<>(
                 Collections.emptyList());
 
         assertTrue(stream.atEndOfStream());
@@ -52,11 +47,11 @@ public class ListStreamTest {
 
     @Test
     public void testLeadingSequence() {
-        ParserStream<List<Token>, Token> stream = new ListStream<>(Arrays.asList(
+        var stream = new ListStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
 
-        SequenceHolder<List<Token>> sequence = stream.getLeadingSequence(5);
+        var sequence = stream.getLeadingSequence(5);
 
         assertEquals(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O),
@@ -66,12 +61,11 @@ public class ListStreamTest {
 
     @Test
     public void testLargeLeadingSequence() {
-        ParserStream<List<Token>, Token> stream = new ListStream<>(
-                Arrays.asList(
-                        Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
-                        Token.W, Token.O, Token.R, Token.L, Token.D));
+        var stream = new ListStream<>(Arrays.asList(
+                Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
+                Token.W, Token.O, Token.R, Token.L, Token.D));
 
-        SequenceHolder<List<Token>> sequence = stream.getLeadingSequence(100);
+        var sequence = stream.getLeadingSequence(100);
 
         assertEquals(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
@@ -82,11 +76,11 @@ public class ListStreamTest {
 
     @Test
     public void testNegativeLeadingSequence() {
-        ParserStream<List<Token>, Token> stream = new ListStream<>(Arrays.asList(
+        var stream = new ListStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
 
-        SequenceHolder<List<Token>> sequence = stream.getLeadingSequence(-100);
+        var sequence = stream.getLeadingSequence(-100);
 
         assertEquals(Collections.emptyList(), sequence.getSequence());
         assertEquals(0, sequence.getLength());
@@ -94,11 +88,11 @@ public class ListStreamTest {
 
     @Test
     public void testLeadingRun() {
-        ParserStream<List<Token>, Token> stream = new ListStream<>(Arrays.asList(
+        var stream = new ListStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
 
-        SequenceHolder<List<Token>> run = stream.getLeadingRun(Token::isFlag);
+        var run = stream.getLeadingRun(Token::isFlag);
 
         assertEquals(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O),
@@ -108,12 +102,12 @@ public class ListStreamTest {
 
     @Test
     public void testEmptyLeadingRun() {
-        ParserStream<List<Token>, Token> stream = new ListStream<>(Arrays.asList(
+        var stream = new ListStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
-        Predicate<Token> flagPredicate = Token::isFlag;
+        var flagPredicate = (Predicate<Token>) Token::isFlag;
 
-        SequenceHolder<List<Token>> run = stream.getLeadingRun(flagPredicate.negate());
+        var run = stream.getLeadingRun(flagPredicate.negate());
 
         assertEquals(Collections.emptyList(), run.getSequence());
         assertEquals(0, run.getLength());
@@ -121,10 +115,9 @@ public class ListStreamTest {
 
     @Test
     public void testLeadingRunOnEmptyStream() {
-        ParserStream<List<Token>, Token> stream = new ListStream<>(
-                Collections.emptyList());
+        var stream = new ListStream<Token>(Collections.emptyList());
 
-        SequenceHolder<List<Token>> run = stream.getLeadingRun(Token::isFlag);
+        var run = stream.getLeadingRun(Token::isFlag);
 
         assertEquals(Collections.emptyList(), run.getSequence());
         assertEquals(0, run.getLength());
@@ -133,13 +126,13 @@ public class ListStreamTest {
 
     @Test
     public void testJump() {
-        ParserStream<List<Token>, Token> stream1 = new ListStream<>(Arrays.asList(
+        var stream1 = new ListStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
-        ParserStream<List<Token>, Token> stream2 = stream1.jump(6);
+        var stream2 = stream1.jump(6);
 
-        Optional<Token> leading1 = stream1.getLeadingItem();
-        Optional<Token> leading2 = stream2.getLeadingItem();
+        var leading1 = stream1.getLeadingItem();
+        var leading2 = stream2.getLeadingItem();
         assertTrue(leading1.isPresent());
         assertTrue(leading2.isPresent());
         assertEquals(Token.H, leading1.get());
@@ -148,28 +141,27 @@ public class ListStreamTest {
 
     @Test
     public void testLargeJump() {
-        ParserStream<List<Token>, Token> stream1 = new ListStream<>(Arrays.asList(
+        var stream1 = new ListStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
+        var stream2 = stream1.jump(100);
 
-        ParserStream<List<Token>, Token> stream2 = stream1.jump(100);
-
-        Optional<Token> leading1 = stream1.getLeadingItem();
-        assertTrue(leading1.isPresent());
-        assertEquals(Token.H, leading1.get());
+        var leading = stream1.getLeadingItem();
+        assertTrue(leading.isPresent());
+        assertEquals(Token.H, leading.get());
         assertTrue(stream2.atEndOfStream());
     }
 
     @Test
     public void testNegativeJump() {
-        ParserStream<List<Token>, Token> stream1 = new ListStream<>(Arrays.asList(
+        var stream1 = new ListStream<>(Arrays.asList(
                 Token.H, Token.E, Token.L, Token.L, Token.O, Token.$,
                 Token.W, Token.O, Token.R, Token.L, Token.D));
 
-        ParserStream<List<Token>, Token> stream2 = stream1.jump(-100);
+        var stream2 = stream1.jump(-100);
 
-        Optional<Token> leading1 = stream1.getLeadingItem();
-        Optional<Token> leading2 = stream2.getLeadingItem();
+        var leading1 = stream1.getLeadingItem();
+        var leading2 = stream2.getLeadingItem();
         assertTrue(leading1.isPresent());
         assertTrue(leading2.isPresent());
         assertEquals(Token.H, leading1.get());

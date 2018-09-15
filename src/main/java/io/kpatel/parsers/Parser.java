@@ -21,7 +21,7 @@ public interface Parser<T, Seq, Itm> {
      * WHAT: A SAM Interface
      * WHY: Make use of Lambda Expressions for Simple Construction
      */
-    Result<T, ParserStream<Seq, Itm>> parse(ParserStream<Seq, Itm> stream);
+    Result<T, Seq, Itm> parse(ParserStream<Seq, Itm> stream);
 
     /**
      * WHAT: Deferring to Result object

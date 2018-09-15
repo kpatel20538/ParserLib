@@ -1,6 +1,7 @@
 package io.kpatel.parsers;
 
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -15,7 +16,7 @@ import java.util.function.Supplier;
  * - Static Factory Methods
  * - Visitor Pattern
  */
-public abstract class Result<T, Strm extends ParserStream<?, ?>> {
+public abstract class Result<T, Seq, Itm> {
     /**
      * WHAT: A package-private constructor of an abstract class to ensure a closed
      * inheritance hierarchy and no base class instances.
@@ -28,7 +29,7 @@ public abstract class Result<T, Strm extends ParserStream<?, ?>> {
      * WHAT: Factory Operation for Success Case
      * WHY: Only source for pure Success Case
      */
-    public static <T, Strm extends ParserStream<?, ?>> Result<T, Strm> success(T result, Strm remaining) {
+    public static <T, Seq, Itm> Result<T, Seq, Itm> success(T result, ParserStream<Seq, Itm> remaining) {
         return new Success<>(result, remaining);
     }
 
@@ -36,7 +37,7 @@ public abstract class Result<T, Strm extends ParserStream<?, ?>> {
      * WHAT: Factory Operation for Failure Case
      * WHY: Only source for pure Failure Case
      */
-    public static <T, Strm extends ParserStream<?, ?>> Result<T, Strm> failure(String errorMessage, Strm remaining) {
+    public static <T, Seq, Itm> Result<T, Seq, Itm> failure(String errorMessage, ParserStream<Seq, Itm> remaining) {
         return new Failure<>(errorMessage, remaining);
     }
 
@@ -47,7 +48,8 @@ public abstract class Result<T, Strm extends ParserStream<?, ?>> {
      *
      * @see Success#map
      */
-    public abstract <U> Result<U, Strm> map(BiFunction<T, Strm, U> mapper);
+    public abstract <U> Result<U, Seq, Itm> map(
+            Function<T, U> mapper);
 
     /**
      * WHAT: Visitor Pattern seeking the Success Case.
@@ -56,7 +58,8 @@ public abstract class Result<T, Strm extends ParserStream<?, ?>> {
      *
      * @see Success#chain
      */
-    public abstract <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> flatMapper);
+    public abstract <U> Result<U, Seq, Itm> chain(
+            BiFunction<T, ParserStream<Seq, Itm>, Result<U, Seq, Itm>> flatMapper);
 
     /**
      * WHAT: Visitor Pattern seeking the Failure Case
@@ -65,7 +68,8 @@ public abstract class Result<T, Strm extends ParserStream<?, ?>> {
      *
      * @see Failure#orElse
      */
-    public abstract Result<T, Strm> orElse(Supplier<Result<T, Strm>> alternative);
+    public abstract Result<T, Seq, Itm> orElse(
+            Supplier<Result<T, Seq, Itm>> alternative);
 
     /**
      * WHAT: Visitor Pattern seeking the Success Case
@@ -87,7 +91,7 @@ public abstract class Result<T, Strm extends ParserStream<?, ?>> {
 }
 
 
-final class Success<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> {
+final class Success<T, Seq, Itm> extends Result<T, Seq, Itm> {
     /**
      * WHY: Storage for actual value
      */
@@ -95,14 +99,14 @@ final class Success<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> 
     /**
      * WHY: For use in composition operations
      */
-    private final Strm remaining;
+    private final ParserStream<Seq, Itm> remaining;
 
     /**
      * WHAT: A package-private constructor of an abstract class to ensure a closed
      * inheritance hierarchy and no base class instances.
      * WHY: Result must either a Success Instance, or a Failure Instance
      */
-    Success(T result, Strm remaining) {
+    Success(T result, ParserStream<Seq, Itm> remaining) {
         this.result = result;
         this.remaining = remaining;
     }
@@ -111,7 +115,7 @@ final class Success<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> 
         return result;
     }
 
-    public Strm getRemaining() {
+    public ParserStream<Seq, Itm> getRemaining() {
         return remaining;
     }
 
@@ -120,8 +124,9 @@ final class Success<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> 
      *
      * @see Result#map
      */
-    public <U> Result<U, Strm> map(BiFunction<T, Strm, U> transform) {
-        U newResult = transform.apply(getResult(), getRemaining());
+    public <U> Result<U, Seq, Itm> map(
+            Function<T, U> mapper) {
+        var newResult = mapper.apply(getResult());
         return Result.success(newResult, getRemaining());
     }
 
@@ -130,8 +135,9 @@ final class Success<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> 
      *
      * @see Result#chain
      */
-    public <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> transform) {
-        return transform.apply(getResult(), getRemaining());
+    public <U> Result<U, Seq, Itm> chain(
+            BiFunction<T, ParserStream<Seq, Itm>, Result<U, Seq, Itm>> flatMapper) {
+        return flatMapper.apply(getResult(), getRemaining());
     }
 
     /**
@@ -140,7 +146,7 @@ final class Success<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> 
      * @see Result#orElse
      * @see Failure#orElse
      */
-    public Result<T, Strm> orElse(Supplier<Result<T, Strm>> alternative) {
+    public Result<T, Seq, Itm> orElse(Supplier<Result<T, Seq, Itm>> alternative) {
         return this;
     }
 
@@ -175,7 +181,7 @@ final class Success<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> 
     }
 }
 
-final class Failure<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> {
+final class Failure<T, Seq, Itm> extends Result<T, Seq, Itm> {
     /**
      * WHY: Explanation of Error
      */
@@ -183,14 +189,14 @@ final class Failure<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> 
     /**
      * WHY: For use in Introspection and Error Handling
      */
-    private final Strm remaining;
+    private final ParserStream<Seq, Itm> remaining;
 
     /**
      * WHAT: A package-private constructor of an abstract class to ensure a closed
      * inheritance hierarchy and no base class instances.
      * WHY: Result must either a Success Instance, or a Failure Instance
      */
-    Failure(String errorMessage, Strm remaining) {
+    Failure(String errorMessage, ParserStream<Seq, Itm> remaining) {
         this.errorMessage = errorMessage;
         this.remaining = remaining;
     }
@@ -199,7 +205,7 @@ final class Failure<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> 
         return errorMessage;
     }
 
-    public Strm getRemaining() {
+    public ParserStream<Seq, Itm> getRemaining() {
         return remaining;
     }
 
@@ -209,7 +215,7 @@ final class Failure<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> 
      * @see Result#map
      * @see Success#map
      */
-    public <U> Result<U, Strm> map(BiFunction<T, Strm, U> transform) {
+    public <U> Result<U, Seq, Itm> map(Function<T, U> mapper) {
         return Result.failure(getErrorMessage(), getRemaining());
     }
 
@@ -219,7 +225,8 @@ final class Failure<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> 
      * @see Result#chain
      * @see Success#chain
      */
-    public <U> Result<U, Strm> chain(BiFunction<T, Strm, Result<U, Strm>> transform) {
+    public <U> Result<U, Seq, Itm> chain(
+            BiFunction<T, ParserStream<Seq, Itm>, Result<U, Seq, Itm>> flatMapper) {
         return Result.failure(getErrorMessage(), getRemaining());
     }
 
@@ -228,7 +235,7 @@ final class Failure<T, Strm extends ParserStream<?, ?>> extends Result<T, Strm> 
      *
      * @see Result#orElse
      */
-    public Result<T, Strm> orElse(Supplier<Result<T, Strm>> alternative) {
+    public Result<T, Seq, Itm> orElse(Supplier<Result<T, Seq, Itm>> alternative) {
         return alternative.get();
     }
 
