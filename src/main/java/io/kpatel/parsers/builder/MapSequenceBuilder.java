@@ -6,6 +6,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Stateless Builder for Maps
+ */
 public class MapSequenceBuilder<K, V> implements SequenceBuilder<HashMap<K, V>, Map.Entry<K, V>, Map<K, V>> {
     @Override
     public HashMap<K, V> getNewBuilder() {

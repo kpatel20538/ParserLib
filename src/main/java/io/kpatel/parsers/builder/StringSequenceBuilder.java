@@ -2,6 +2,9 @@ package io.kpatel.parsers.builder;
 
 import io.kpatel.parsers.SequenceBuilder;
 
+/**
+ * Stateless Builder for String
+ */
 public class StringSequenceBuilder implements SequenceBuilder<StringBuilder, String, String> {
     @Override
     public StringBuilder getNewBuilder() {

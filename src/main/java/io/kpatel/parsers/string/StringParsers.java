@@ -1,6 +1,7 @@
 package io.kpatel.parsers.string;
 
 import io.kpatel.parsers.Parser;
+import io.kpatel.parsers.Parsers;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,9 +48,23 @@ public final class StringParsers {
 
     public static Parser<String, String, Character> word(String term) {
         Predicate<Character> predicate = Character::isLetterOrDigit;
+        Parser<Character, String, Character> wordBoundary = item(predicate.negate(),
+                () -> String.format("Cannot Find Word Boundary for Keyword '%s'", term));
+        Parser<Character, String, Character> eof = Parsers.<String, Character>endOfStream().map(v -> '\0');
         return postfix(sequence(term, () -> String.format("Cannot Find Keyword '%s'", term)),
-                peek(item(predicate.negate(), () -> String.format("Cannot Find Word Boundary for Keyword '%s'", term))));
+                peek(wordBoundary.orElse(() -> eof)));
     }
+
+    public static Parser<String, String, Character> whitespace() {
+        return optionalRun(Character::isSpaceChar);
+    }
+
+    public static Parser<String, String, Character> untilNewline() {
+        Parser<Character, String, Character> eof = Parsers.<String, Character>endOfStream().map(v -> '\0');
+        Parser<Character, String, Character> newline = item('\n', () -> "Cannot find Newline");
+        return postfix(optionalRun(c -> c != '\n'), newline.orElse(() -> eof));
+    }
+
 
     public static Parser<String, String, Character> letters() {
         return optionalRun(Character::isLetter);

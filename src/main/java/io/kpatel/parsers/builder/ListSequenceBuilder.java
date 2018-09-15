@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Stateless Builder for Lists
+ */
 public class ListSequenceBuilder<T> implements SequenceBuilder<ArrayList<T>, T, List<T>> {
     @Override
     public ArrayList<T> getNewBuilder() {
