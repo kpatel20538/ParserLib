@@ -4,21 +4,19 @@ import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.ParserError;
 import io.kpatel.parsers.ParserStream;
 import io.kpatel.parsers.Result;
-import io.kpatel.parsers.string.StringParserStream;
+import io.kpatel.parsers.string.StringStream;
 import org.junit.Test;
 
 import static io.kpatel.parsers.Parsers.*;
-import static io.kpatel.parsers.string.StringParsers.character;
-import static io.kpatel.parsers.string.StringParsers.string;
 import static org.junit.Assert.assertEquals;
 
 public class AffixTest {
     @Test
     public void testPrefixSuccess() {
-        ParserStream<String, Character> stream = new StringParserStream("int x");
+        ParserStream<String, Character> stream = new StringStream("int x");
         Parser<Character, String, Character> parser = prefix(
-                string("int "),
-                character(Character::isLetter, () -> "Cannot Find Letter"));
+                sequence("int ", () -> "Cannot Find Identifier"),
+                item(Character::isLetter, () -> "Cannot Find Letter"));
         Result<Character, ?> result = parser.parse(stream);
 
         Character item = result.getOrThrow();
@@ -28,10 +26,10 @@ public class AffixTest {
 
     @Test(expected = ParserError.class)
     public void testPrefixFailurePrefix() {
-        ParserStream<String, Character> stream = new StringParserStream("float x");
+        ParserStream<String, Character> stream = new StringStream("float x");
         Parser<Character, String, Character> parser = prefix(
-                string("int "),
-                character(Character::isLetter, () -> "Cannot Find Letter"));
+                sequence("int ", () -> "Cannot Find Identifier"),
+                item(Character::isLetter, () -> "Cannot Find Letter"));
         Result<Character, ?> result = parser.parse(stream);
 
         result.getOrThrow();
@@ -39,10 +37,10 @@ public class AffixTest {
 
     @Test(expected = ParserError.class)
     public void testPrefixFailureRoot() {
-        ParserStream<String, Character> stream = new StringParserStream("int 1");
+        ParserStream<String, Character> stream = new StringStream("int 1");
         Parser<Character, String, Character> parser = prefix(
-                string("int "),
-                character(Character::isLetter, () -> "Cannot Find Letter"));
+                sequence("int ", () -> "Cannot Find Identifier"),
+                item(Character::isLetter, () -> "Cannot Find Letter"));
         Result<Character, ?> result = parser.parse(stream);
 
         result.getOrThrow();
@@ -50,10 +48,10 @@ public class AffixTest {
 
     @Test
     public void testPostfixSuccess() {
-        StringParserStream stream = new StringParserStream("x;");
+        StringStream stream = new StringStream("x;");
         Parser<Character, String, Character> parser = postfix(
-                character(Character::isLetter, () -> "Cannot Find Letter"),
-                string(";"));
+                item(Character::isLetter, () -> "Cannot Find Letter"),
+                sequence(";", () -> "Cannot Find Terminator"));
         Result<Character, ?> result = parser.parse(stream);
 
         Character item = result.getOrThrow();
@@ -63,10 +61,10 @@ public class AffixTest {
 
     @Test(expected = ParserError.class)
     public void testPostfixFailurePostfix() {
-        StringParserStream stream = new StringParserStream("x,");
+        StringStream stream = new StringStream("x,");
         Parser<Character, String, Character> parser = postfix(
-                character(Character::isLetter, () -> "Cannot Find Letter"),
-                string(";"));
+                item(Character::isLetter, () -> "Cannot Find Letter"),
+                sequence(";", () -> "Cannot Find Terminator"));
         Result<Character, ?> result = parser.parse(stream);
 
         result.getOrThrow();
@@ -74,10 +72,10 @@ public class AffixTest {
 
     @Test(expected = ParserError.class)
     public void testPostfixFailureRoot() {
-        StringParserStream stream = new StringParserStream("1;");
+        StringStream stream = new StringStream("1;");
         Parser<Character, String, Character> parser = postfix(
-                character(Character::isLetter, () -> "Cannot Find Letter"),
-                string(";"));
+                item(Character::isLetter, () -> "Cannot Find Letter"),
+                sequence(";", () -> "Cannot Find Terminator"));
         Result<Character, ?> result = parser.parse(stream);
 
         result.getOrThrow();
@@ -85,11 +83,11 @@ public class AffixTest {
 
     @Test
     public void testBetweenSuccess() {
-        StringParserStream stream = new StringParserStream("int x;");
+        StringStream stream = new StringStream("int x;");
         Parser<Character, String, Character> parser = between(
-                string("int "),
-                character(Character::isLetter, () -> "Cannot Find Letter"),
-                string(";"));
+                sequence("int ", () -> "Cannot Find Identifier"),
+                item(Character::isLetter, () -> "Cannot Find Letter"),
+                sequence(";", () -> "Cannot Find Terminator"));
         Result<Character, ?> result = parser.parse(stream);
 
         Character item = result.getOrThrow();
@@ -99,11 +97,11 @@ public class AffixTest {
 
     @Test(expected = ParserError.class)
     public void testBetweenFailurePrefix() {
-        StringParserStream stream = new StringParserStream("float x;");
+        StringStream stream = new StringStream("float x;");
         Parser<Character, String, Character> parser = between(
-                string("int "),
-                character(Character::isLetter, () -> "Cannot Find Letter"),
-                string(";"));
+                sequence("int ", () -> "Cannot Find Identifier"),
+                item(Character::isLetter, () -> "Cannot Find Letter"),
+                sequence(";", () -> "Cannot Find Terminator"));
         Result<Character, ?> result = parser.parse(stream);
 
         result.getOrThrow();
@@ -111,11 +109,11 @@ public class AffixTest {
 
     @Test(expected = ParserError.class)
     public void testBetweenFailurePostfix() {
-        StringParserStream stream = new StringParserStream("int x,");
+        StringStream stream = new StringStream("int x,");
         Parser<Character, String, Character> parser = between(
-                string("int "),
-                character(Character::isLetter, () -> "Cannot Find Letter"),
-                string(";"));
+                sequence("int ", () -> "Cannot Find Identifier"),
+                item(Character::isLetter, () -> "Cannot Find Letter"),
+                sequence(";", () -> "Cannot Find Terminator"));
         Result<Character, ?> result = parser.parse(stream);
 
         result.getOrThrow();
@@ -123,11 +121,11 @@ public class AffixTest {
 
     @Test(expected = ParserError.class)
     public void testBetweenFailureRoot() {
-        StringParserStream stream = new StringParserStream("int 1;");
+        StringStream stream = new StringStream("int 1;");
         Parser<Character, String, Character> parser = between(
-                string("int "),
-                character(Character::isLetter, () -> "Cannot Find Letter"),
-                string(";"));
+                sequence("int ", () -> "Cannot Find Identifier"),
+                item(Character::isLetter, () -> "Cannot Find Letter"),
+                sequence(";", () -> "Cannot Find Terminator"));
         Result<Character, ?> result = parser.parse(stream);
 
         result.getOrThrow();

@@ -2,19 +2,17 @@ package io.kpatel.parsers.parsers;
 
 import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.Result;
-import io.kpatel.parsers.string.StringParserStream;
+import io.kpatel.parsers.string.StringStream;
 import org.junit.Test;
 
-import static io.kpatel.parsers.Parsers.optional;
-import static io.kpatel.parsers.string.StringParsers.character;
-import static io.kpatel.parsers.string.StringParsers.string;
+import static io.kpatel.parsers.Parsers.*;
 import static org.junit.Assert.assertEquals;
 
 public class OptionalTest {
     @Test
     public void testStringOptionalSuccess() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<String, String, Character> parser = optional(string("Hello"));
+        StringStream stream = new StringStream("Hello World");
+        Parser<String, String, Character> parser = optional(sequence("Hello", () -> "Cannot Find Hello"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -24,8 +22,8 @@ public class OptionalTest {
 
     @Test
     public void testStringOptionalFailure() {
-        StringParserStream stream = new StringParserStream("Hello");
-        Parser<String, String, Character> parser = optional(string("World"));
+        StringStream stream = new StringStream("Hello");
+        Parser<String, String, Character> parser = optional(sequence("World", () -> "Cannot Find World"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -35,8 +33,8 @@ public class OptionalTest {
 
     @Test
     public void testGenericOptionalSuccess() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<Character, String, Character> parser = optional(character('H'), () -> '\0');
+        StringStream stream = new StringStream("Hello World");
+        Parser<Character, String, Character> parser = optional(item('H', () -> "Cannot Find Character H"), () -> '\0');
         Result<Character, ?> result = parser.parse(stream);
 
         Character item = result.getOrThrow();
@@ -46,8 +44,8 @@ public class OptionalTest {
 
     @Test
     public void testGenericOptionalFailure() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<Character, String, Character> parser = optional(character('W'), () -> '\0');
+        StringStream stream = new StringStream("Hello World");
+        Parser<Character, String, Character> parser = optional(item('W', () -> "Cannot Find Character W"), () -> '\0');
         Result<Character, ?> result = parser.parse(stream);
 
         Character item = result.getOrThrow();

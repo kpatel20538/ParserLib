@@ -1,10 +1,10 @@
 package io.kpatel.parsers;
 
+import io.kpatel.parsers.list.ListSequenceBuilder;
 import io.kpatel.parsers.string.StringParsers;
+import io.kpatel.parsers.string.StringSequenceBuilder;
 
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -30,7 +30,7 @@ public final class Parsers {
      */
     public static <T, Seq, Itm>
     Parser<T, Seq, Itm> peek(Parser<T, Seq, Itm> parser) {
-        return stream1 -> parser.parse(stream1)
+        return (stream1) -> parser.parse(stream1)
                 .chain((item, stream2) -> Result.success(item, stream1));
     }
 
@@ -39,7 +39,7 @@ public final class Parsers {
      */
     public static <Seq, Itm>
     Parser<Void, Seq, Itm> endOfStream() {
-        return stream -> stream.atEndOfStream()
+        return (stream) -> stream.atEndOfStream()
                 ? Result.success(null, stream)
                 : Result.failure("Expected End of Stream", stream);
     }
@@ -51,7 +51,7 @@ public final class Parsers {
     Parser<T, Seq, Itm> exception(
             Parser<T, Seq, Itm> parser,
             Predicate<T> except) {
-        return stream -> parser.parse(stream).chain((item, stream1) ->
+        return (stream) -> parser.parse(stream).chain((item, stream1) ->
                 except.test(item)
                         ? Result.failure("Parser result was in exception case", stream)
                         : Result.success(item, stream1)
@@ -64,7 +64,7 @@ public final class Parsers {
     public static <T, Seq, Itm>
     Parser<T, Seq, Itm> alternate(List<? extends Parser<T, Seq, Itm>> parsers) {
         ArrayList<? extends Parser<T, Seq, Itm>> parserList = new ArrayList<>(parsers);
-        return stream -> {
+        return (stream) -> {
             Result<T, ParserStream<Seq, Itm>> result = Result.failure("No Parsers To Alternate with.", stream);
             for (Parser<T, Seq, Itm> parser : parserList) {
                 result = result.orElse(() -> parser.parse(stream));
@@ -79,11 +79,7 @@ public final class Parsers {
     public static <Seq, Itm>
     Parser<String, Seq, Itm> concatenateString(
             List<? extends Parser<String, Seq, Itm>> parsers) {
-        return Parsers.concatenate(
-                StringBuilder::append,
-                StringBuilder::new,
-                parsers
-        ).map(StringBuilder::toString);
+        return Parsers.concatenate(new StringSequenceBuilder(), parsers);
     }
 
     /**
@@ -92,28 +88,24 @@ public final class Parsers {
     public static <T, Seq, Itm>
     Parser<List<T>, Seq, Itm> concatenateList(
             List<? extends Parser<T, Seq, Itm>> parsers) {
-        return Parsers.concatenate(
-                Parsers::appendList,
-                Parsers::<T>newList,
-                parsers
-        ).map(Collections::unmodifiableList);
+        return Parsers.concatenate(new ListSequenceBuilder<>(), parsers);
     }
 
     /**
      * WHAT: Parse until all parsers succeeds or one parser fail and join the results to the empty case
      */
-    public static <T, Bld, Seq, Itm>
-    Parser<Bld, Seq, Itm> concatenate(
-            BiFunction<Bld, T, Bld> reduce, Supplier<Bld> empty,
+    public static <Bld, T, Out, Seq, Itm>
+    Parser<Out, Seq, Itm> concatenate(
+            SequenceBuilder<Bld, T, Out> sequenceBuilder,
             List<? extends Parser<T, Seq, Itm>> parsers) {
         ArrayList<? extends Parser<T, Seq, Itm>> parserList = new ArrayList<>(parsers);
-        return stream -> {
-            Result<Bld, ParserStream<Seq, Itm>> result = Result.success(empty.get(), stream);
+        return (stream) -> {
+            Result<Bld, ParserStream<Seq, Itm>> result = Result.success(sequenceBuilder.getNewBuilder(), stream);
             for (Parser<T, Seq, Itm> parser : parserList) {
                 result = result.chain((bld, remaining) -> parser.parse(remaining)
-                        .map((itm, stream1) -> reduce.apply(bld, itm)));
+                        .map((itm, stream1) -> sequenceBuilder.appendPart(bld, itm)));
             }
-            return result;
+            return result.map((bld, stream1) -> sequenceBuilder.toOutput(bld));
         };
     }
 
@@ -121,46 +113,37 @@ public final class Parsers {
      * WHAT: Parse a parser until it fails and join the results to the empty string
      */
     public static <Seq, Itm>
-    Parser<String, Seq, Itm> zeroOrMoreString(
-            Parser<String, Seq, Itm> parser) {
-        return Parsers.zeroOrMore(
-                StringBuilder::append,
-                StringBuilder::new,
-                parser
-        ).map(StringBuilder::toString);
+    Parser<String, Seq, Itm> zeroOrMoreString(Parser<String, Seq, Itm> parser) {
+        return Parsers.zeroOrMore(new StringSequenceBuilder(), parser);
     }
 
     /**
      * WHAT: Parse a parser until it fails and join the results to the empty list
      */
     public static <T, Seq, Itm>
-    Parser<List<T>, Seq, Itm> zeroOrMoreList(
-            Parser<T, Seq, Itm> parser) {
-        return Parsers.zeroOrMore(
-                Parsers::appendList,
-                Parsers::<T>newList,
-                parser
-        ).map(Collections::unmodifiableList);
+    Parser<List<T>, Seq, Itm> zeroOrMoreList(Parser<T, Seq, Itm> parser) {
+        return Parsers.zeroOrMore(new ListSequenceBuilder<>(), parser);
     }
 
     /**
      * WHAT: Parse a parser until it fails and join the results to the empty case
      */
-    public static <T, Bld, Seq, Itm>
-    Parser<Bld, Seq, Itm> zeroOrMore(
-            BiFunction<Bld, T, Bld> reduce,
-            Supplier<Bld> empty,
+
+    public static <Bld, T, Out, Seq, Itm>
+    Parser<Out, Seq, Itm> zeroOrMore(
+            SequenceBuilder<Bld, T, Out> sequenceBuilder,
             Parser<T, Seq, Itm> parser) {
-        return stream -> {
-            Result<Bld, ParserStream<Seq, Itm>> prevResult = Result.success(empty.get(), stream);
+        return (stream) -> {
+            Bld builder = sequenceBuilder.getNewBuilder();
+            Result<Bld, ParserStream<Seq, Itm>> prevResult = Result.success(builder, stream);
             Result<Bld, ParserStream<Seq, Itm>> result = prevResult;
 
             while (result.isSuccess()) {
                 prevResult = result;
                 result = result.chain((bld, stream1) -> parser.parse(stream1)
-                        .map((itm, stream2) -> reduce.apply(bld, itm)));
+                        .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
             }
-            return prevResult;
+            return prevResult.map((bld, stream1) -> sequenceBuilder.toOutput(bld));
         };
     }
 
@@ -170,11 +153,7 @@ public final class Parsers {
     public static <Seq, Itm>
     Parser<String, Seq, Itm> oneOrMoreString(
             Parser<String, Seq, Itm> parser) {
-        return oneOrMore(
-                StringBuilder::append,
-                StringBuilder::new,
-                parser
-        ).map(StringBuilder::toString);
+        return oneOrMore(new StringSequenceBuilder(), parser);
     }
 
     /**
@@ -183,21 +162,28 @@ public final class Parsers {
     public static <T, Seq, Itm>
     Parser<List<T>, Seq, Itm> oneOrMoreList(
             Parser<T, Seq, Itm> parser) {
-        return oneOrMore(
-                Parsers::appendList,
-                Parsers::<T>newList,
-                parser).map(Collections::unmodifiableList);
+        return oneOrMore(new ListSequenceBuilder<>(), parser);
     }
 
     /**
      * WHAT: Parse a parser until it fails and join the results to the empty case, requires at least one
      */
-    public static <T, Bld, Seq, Itm>
-    Parser<Bld, Seq, Itm> oneOrMore(
-            BiFunction<Bld, T, Bld> reduce,
-            Supplier<Bld> empty,
+    public static <Bld, T, Out, Seq, Itm>
+    Parser<Out, Seq, Itm> oneOrMore(
+            SequenceBuilder<Bld, T, Out> sequenceBuilder,
             Parser<T, Seq, Itm> parser) {
-        return parser.chain(item -> zeroOrMore(reduce, () -> reduce.apply(empty.get(), item), parser));
+        return (stream) -> {
+            Result<Bld, ParserStream<Seq, Itm>> prevResult = parser.parse(stream)
+                    .map((part, stream1) -> sequenceBuilder.getNewBuilder(part));
+            Result<Bld, ParserStream<Seq, Itm>> result = prevResult;
+
+            while (result.isSuccess()) {
+                prevResult = result;
+                result = result.chain((bld, stream1) -> parser.parse(stream1)
+                        .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
+            }
+            return prevResult.map((bld, stream1) -> sequenceBuilder.toOutput(bld));
+        };
     }
 
     /**
@@ -207,11 +193,7 @@ public final class Parsers {
     Parser<String, Seq, Itm> delimitedString(
             Parser<String, Seq, Itm> parser,
             Parser<?, Seq, Itm> delimiter) {
-        return delimited(
-                StringBuilder::append,
-                StringBuilder::new,
-                parser, delimiter
-        ).map(StringBuilder::toString);
+        return delimited(new StringSequenceBuilder(), parser, delimiter);
     }
 
     /**
@@ -221,23 +203,32 @@ public final class Parsers {
     Parser<List<T>, Seq, Itm> delimitedList(
             Parser<T, Seq, Itm> parser,
             Parser<?, Seq, Itm> delimiter) {
-        return delimited(
-                Parsers::appendList,
-                Parsers::<T>newList,
-                parser, delimiter
-        ).map(Collections::unmodifiableList);
+        return delimited(new ListSequenceBuilder<>(), parser, delimiter);
     }
 
     /**
      * WHAT: Parse a parser until it fails and join the results to the empty case, requires at least one
      */
-    public static <T, Bld, Seq, Itm>
-    Parser<Bld, Seq, Itm> delimited(
-            BiFunction<Bld, T, Bld> reduce,
-            Supplier<Bld> empty,
+    public static <Bld, T, Out, Seq, Itm>
+    Parser<Out, Seq, Itm> delimited(
+            SequenceBuilder<Bld, T, Out> sequenceBuilder,
             Parser<T, Seq, Itm> parser,
             Parser<?, Seq, Itm> delimiter) {
-        return optional(parser.chain(item -> zeroOrMore(reduce, () -> reduce.apply(empty.get(), item), prefix(delimiter, parser))), empty);
+        Parser<T, Seq, Itm> prefixedParser = prefix(delimiter, parser);
+        Parser<Bld, Seq, Itm> delimitedParser = stream -> {
+            Result<Bld, ParserStream<Seq, Itm>> prevResult = parser.parse(stream)
+                    .map((part, stream1) -> sequenceBuilder.getNewBuilder(part));
+            Result<Bld, ParserStream<Seq, Itm>> result = prevResult;
+
+            while (result.isSuccess()) {
+                prevResult = result;
+                result = result.chain((bld, stream1) -> prefixedParser.parse(stream1)
+                        .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
+            }
+            return prevResult;
+        };
+        return optional(delimitedParser, sequenceBuilder::getNewBuilder)
+                .map(sequenceBuilder::toOutput);
     }
 
     /**
@@ -245,14 +236,8 @@ public final class Parsers {
      */
     public static <Seq, Itm>
     Parser<String, Seq, Itm> repetitionString(
-            int count,
-            Parser<String, Seq, Itm> parser) {
-        return repetition(
-                count,
-                StringBuilder::append,
-                StringBuilder::new,
-                parser
-        ).map(StringBuilder::toString);
+            int count, Parser<String, Seq, Itm> parser) {
+        return repetition(count, new StringSequenceBuilder(), parser);
     }
 
     /**
@@ -260,31 +245,26 @@ public final class Parsers {
      */
     public static <T, Seq, Itm>
     Parser<List<T>, Seq, Itm> repetitionList(
-            int count,
-            Parser<T, Seq, Itm> parser) {
-        return repetition(
-                count,
-                Parsers::appendList,
-                Parsers::<T>newList,
-                parser).map(Collections::unmodifiableList);
+            int count, Parser<T, Seq, Itm> parser) {
+        return repetition(count, new ListSequenceBuilder<>(), parser);
     }
 
     /**
      * WHAT: Parses an exact number of an item and joins them together
      */
-    public static <T, Bld, Seq, Itm>
-    Parser<Bld, Seq, Itm> repetition(
+    public static <Bld, T, Out, Seq, Itm>
+    Parser<Out, Seq, Itm> repetition(
             int count,
-            BiFunction<Bld, T, Bld> reduce,
-            Supplier<Bld> empty,
+            SequenceBuilder<Bld, T, Out> sequenceBuilder,
             Parser<T, Seq, Itm> parser) {
-        return stream -> {
-            Result<Bld, ParserStream<Seq, Itm>> result = Result.success(empty.get(), stream);
+        return (stream) -> {
+            Bld builder = sequenceBuilder.getNewBuilder();
+            Result<Bld, ParserStream<Seq, Itm>> result = Result.success(builder, stream);
             for (int i = 0; i < count && result.isSuccess(); i++) {
                 result = result.chain((bld, stream1) -> parser.parse(stream1)
-                        .map((itm, stream2) -> reduce.apply(bld, itm)));
+                        .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
             }
-            return result;
+            return result.map(((bld, stream1) -> sequenceBuilder.toOutput(bld)));
         };
     }
 
@@ -295,12 +275,7 @@ public final class Parsers {
     Parser<String, Seq, Itm> repetitionString(
             int inclusiveLow, int inclusiveHigh,
             Parser<String, Seq, Itm> parser) {
-        return repetition(
-                inclusiveLow, inclusiveHigh,
-                StringBuilder::append,
-                StringBuilder::new,
-                parser
-        ).map(StringBuilder::toString);
+        return repetition(inclusiveLow, inclusiveHigh, new StringSequenceBuilder(), parser);
     }
 
     /**
@@ -310,38 +285,33 @@ public final class Parsers {
     Parser<List<T>, Seq, Itm> repetitionList(
             int inclusiveLow, int inclusiveHigh,
             Parser<T, Seq, Itm> parser) {
-        return repetition(
-                inclusiveLow, inclusiveHigh,
-                Parsers::appendList,
-                Parsers::<T>newList,
-                parser).map(Collections::unmodifiableList);
+        return repetition(inclusiveLow, inclusiveHigh, new ListSequenceBuilder<>(), parser);
     }
 
     /**
      * WHAT: Parses a range of an item and joins them together
      */
-    public static <T, Bld, Seq, Itm>
-    Parser<Bld, Seq, Itm> repetition(
+    public static <Bld, T, Out, Seq, Itm>
+    Parser<Out, Seq, Itm> repetition(
             int inclusiveLow, int inclusiveHigh,
-            BiFunction<Bld, T, Bld> reduce,
-            Supplier<Bld> empty,
+            SequenceBuilder<Bld, T, Out> sequenceBuilder,
             Parser<T, Seq, Itm> parser) {
-        return stream -> {
-            Result<Bld, ParserStream<Seq, Itm>> result = Result.success(empty.get(), stream);
+        return (stream) -> {
+            Bld builder = sequenceBuilder.getNewBuilder();
+            Result<Bld, ParserStream<Seq, Itm>> result = Result.success(builder, stream);
             for (int i = 0; i < inclusiveLow && result.isSuccess(); i++) {
                 result = result.chain((bld, stream1) -> parser.parse(stream1)
-                        .map((itm, stream2) -> reduce.apply(bld, itm)));
+                        .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
             }
-            if (!result.isSuccess()) {
-                return result;
+            if (result.isSuccess()) {
+                Result<Bld, ParserStream<Seq, Itm>> nextResult = result;
+                for (int i = inclusiveLow; i < inclusiveHigh && nextResult.isSuccess(); i++) {
+                    result = nextResult;
+                    nextResult = result.chain((bld, stream1) -> parser.parse(stream1)
+                            .map((itm, stream2) -> sequenceBuilder.appendPart(bld, itm)));
+                }
             }
-            Result<Bld, ParserStream<Seq, Itm>> prevResult = result;
-            for (int i = inclusiveLow; i < inclusiveHigh && result.isSuccess(); i++) {
-                prevResult = result;
-                result = result.chain((bld, stream1) -> parser.parse(stream1)
-                        .map((itm, stream2) -> reduce.apply(bld, itm)));
-            }
-            return prevResult;
+            return result.map((bld, stream1) -> sequenceBuilder.toOutput(bld));
         };
     }
 
@@ -390,7 +360,7 @@ public final class Parsers {
      */
     public static <T, Seq, Itm>
     Parser<T, Seq, Itm> optional(Parser<T, Seq, Itm> parser, Supplier<T> placeholder) {
-        return stream -> parser.parse(stream)
+        return (stream) -> parser.parse(stream)
                 .orElse(() -> Result.success(placeholder.get(), stream));
     }
 
@@ -414,10 +384,10 @@ public final class Parsers {
      * WHAT: Parse an item that satisfy a given predicate
      */
     public static <Seq, Itm>
-    Parser<Itm, Seq, Itm> terminalItem(
+    Parser<Itm, Seq, Itm> item(
             Predicate<Itm> predicate,
             Supplier<String> errorMessage) {
-        return stream -> stream.getLeadingItem()
+        return (stream) -> stream.getLeadingItem()
                 .filter(predicate)
                 .map(i -> Result.success(i, stream.jump(1)))
                 .orElseGet(() -> Result.failure(errorMessage.get(), stream));
@@ -426,35 +396,34 @@ public final class Parsers {
     /**
      * WHAT: Parse the given Character
      *
-     * @see StringParsers#character(Predicate, Supplier)
+     * @see StringParsers(Predicate, Supplier)
      */
-    public static <Seq, Itm> Parser<Itm, Seq, Itm> terminalItem(Itm target, Supplier<String> errorMessage) {
-        return terminalItem(target::equals, errorMessage);
+    public static <Seq, Itm> Parser<Itm, Seq, Itm> item(Itm target, Supplier<String> errorMessage) {
+        return item(target::equals, errorMessage);
     }
 
     /**
      * WHAT: Parse Any Character from the given String
      *
-     * @see StringParsers#character(Predicate, Supplier)
+     * @see StringParsers(Predicate, Supplier)
      */
-    public static <Seq, Itm> Parser<Itm, Seq, Itm> terminalItem(Collection<Itm> items, Supplier<String> errorMessage) {
+    public static <Seq, Itm> Parser<Itm, Seq, Itm> item(Collection<Itm> items, Supplier<String> errorMessage) {
         Set<Itm> itemSet = new HashSet<>(items);
-        return terminalItem(itemSet::contains, errorMessage);
+        return item(itemSet::contains, errorMessage);
     }
 
     /**
      * WHAT: Parse as sequence of items
      */
     public static <Seq, Itm>
-    Parser<Seq, Seq, Itm> terminalSequence(
-            Seq sequence,
-            Function<Seq, Integer> measureLength,
-            Supplier<String> errorMessage) {
-        return stream -> {
-            int size = measureLength.apply(sequence);
-            Seq leading = stream.getLeadingSequence(size);
+    Parser<Seq, Seq, Itm> sequence(Seq sequence, Supplier<String> errorMessage) {
+        return (stream) -> {
+            SequenceHolder<Seq> sequenceHolder = stream.holdSequence(sequence);
+            int size = sequenceHolder.getLength();
+            SequenceHolder<Seq> leadingHolder = stream.getLeadingSequence(size);
+            Seq leading = leadingHolder.getSequence();
             return leading.equals(sequence)
-                    ? Result.success(leading, stream.jump(size))
+                    ? Result.success(leading, stream.jump(leadingHolder.getLength()))
                     : Result.failure(errorMessage.get(), stream);
         };
     }
@@ -463,54 +432,52 @@ public final class Parsers {
      * WHAT: Parse a run of item that satisfy a given predicate, Will always succeed
      */
     public static <Seq, Itm>
-    Parser<Seq, Seq, Itm> terminalOptionalRun(
-            Predicate<Itm> predicate,
-            Function<Seq, Integer> measureLength) {
-        return stream -> {
-            Seq run = stream.getLeadingRun(predicate);
-            int size = measureLength.apply(run);
-            return Result.success(run, stream.jump(size));
+    Parser<Seq, Seq, Itm> optionalRun(Predicate<Itm> predicate) {
+        return (stream) -> {
+            SequenceHolder<Seq> holder = stream.getLeadingRun(predicate);
+            int size = holder.getLength();
+            return Result.success(holder.getSequence(), stream.jump(size));
         };
     }
 
     /**
      * WHAT: Parse a run of given character, Will always succeed
      */
-    public static <Seq, Itm> Parser<Seq, Seq, Itm> terminalOptionalRun(Itm target, Function<Seq, Integer> measureLength) {
-        return terminalOptionalRun(target::equals, measureLength);
+    public static <Seq, Itm> Parser<Seq, Seq, Itm> optionalRun(Itm target) {
+        return optionalRun(target::equals);
     }
 
     /**
      * WHAT: Parse a run of any character from the give string, Will always succeed
      */
-    public static <Seq, Itm> Parser<Seq, Seq, Itm> terminalOptionalRun(Collection<Itm> items, Function<Seq, Integer> measureLength) {
+    public static <Seq, Itm> Parser<Seq, Seq, Itm> optionalRun(Collection<Itm> items) {
         Set<Itm> itemSet = new HashSet<>(items);
-        return terminalOptionalRun(itemSet::contains, measureLength);
+        return optionalRun(itemSet::contains);
     }
 
     /**
      * WHAT: Parse a run of characters that satisfy a given predicate, Will fail is nothing is found
      */
-    public static <Seq, Itm> Parser<Seq, Seq, Itm> terminalRun(Predicate<Itm> predicate, Function<Seq, Integer> measureLength, Supplier<String> errorMessage) {
-        return Parsers.<Itm, Seq, Itm>peek(Parsers.terminalItem(predicate, errorMessage))
-                .chain(t -> Parsers.terminalOptionalRun(predicate, measureLength));
+    public static <Seq, Itm> Parser<Seq, Seq, Itm> run(Predicate<Itm> predicate, Supplier<String> errorMessage) {
+        return Parsers.<Itm, Seq, Itm>peek(Parsers.item(predicate, errorMessage))
+                .chain(t -> Parsers.optionalRun(predicate));
     }
 
     /**
      * WHAT: Parse a run of given character, Will fail is nothing is found
      */
-    public static <Seq, Itm> Parser<Seq, Seq, Itm> terminalRun(Itm target, Function<Seq, Integer> measureLength, Supplier<String> errorMessage) {
-        return Parsers.<Itm, Seq, Itm>peek(Parsers.terminalItem(target, errorMessage))
-                .chain(t -> Parsers.terminalOptionalRun(target, measureLength));
+    public static <Seq, Itm> Parser<Seq, Seq, Itm> run(Itm target, Supplier<String> errorMessage) {
+        return Parsers.<Itm, Seq, Itm>peek(Parsers.item(target, errorMessage))
+                .chain(t -> Parsers.optionalRun(target));
     }
 
     /**
      * WHAT: Parse a run of any character from the give string, Will fail is nothing is found
      */
-    public static <Seq, Itm> Parser<Seq, Seq, Itm> terminalRun(Collection<Itm> items, Function<Seq, Integer> measureLength, Supplier<String> errorMessage) {
+    public static <Seq, Itm> Parser<Seq, Seq, Itm> run(Collection<Itm> items, Supplier<String> errorMessage) {
         Set<Itm> itemSet = new HashSet<>(items);
-        return Parsers.<Itm, Seq, Itm>peek(Parsers.terminalItem(itemSet::contains, errorMessage))
-                .chain(t -> Parsers.terminalOptionalRun(itemSet::contains, measureLength));
+        return Parsers.<Itm, Seq, Itm>peek(Parsers.item(itemSet::contains, errorMessage))
+                .chain(t -> Parsers.optionalRun(itemSet::contains));
     }
 
 

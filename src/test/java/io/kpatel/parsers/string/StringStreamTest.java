@@ -1,16 +1,17 @@
 package io.kpatel.parsers.string;
 
 import io.kpatel.parsers.ParserStream;
+import io.kpatel.parsers.SequenceHolder;
 import org.junit.Test;
 
 import java.util.Optional;
 
 import static org.junit.Assert.*;
 
-public class StringParserStreamTest {
+public class StringStreamTest {
     @Test
     public void testLeadingItemPresent() {
-        StringParserStream stream = new StringParserStream("Hello");
+        StringStream stream = new StringStream("Hello");
 
         Optional<Character> character = stream.getLeadingItem();
 
@@ -20,7 +21,7 @@ public class StringParserStreamTest {
 
     @Test
     public void testLeadingItemEmpty() {
-        StringParserStream stream = new StringParserStream("");
+        StringStream stream = new StringStream("");
 
         Optional<Character> character = stream.getLeadingItem();
 
@@ -29,75 +30,81 @@ public class StringParserStreamTest {
 
     @Test
     public void testNonEmptyStream() {
-        StringParserStream stream = new StringParserStream("Hello");
+        StringStream stream = new StringStream("Hello");
 
         assertFalse(stream.atEndOfStream());
     }
 
     @Test
     public void testEmptyStream() {
-        StringParserStream stream = new StringParserStream("");
+        StringStream stream = new StringStream("");
 
         assertTrue(stream.atEndOfStream());
     }
 
     @Test
     public void testLeadingSequence() {
-        StringParserStream stream = new StringParserStream("Hello World");
+        StringStream stream = new StringStream("Hello World");
 
-        String sequence = stream.getLeadingSequence(5);
+        SequenceHolder<String> sequence = stream.getLeadingSequence(5);
 
-        assertEquals("Hello", sequence);
+        assertEquals("Hello", sequence.getSequence());
+        assertEquals(5, sequence.getLength());
     }
 
     @Test
     public void testLargeLeadingSequence() {
-        StringParserStream stream = new StringParserStream("Hello World");
+        StringStream stream = new StringStream("Hello World");
 
-        String sequence = stream.getLeadingSequence(100);
+        SequenceHolder<String> sequence = stream.getLeadingSequence(100);
 
-        assertEquals("Hello World", sequence);
+        assertEquals("Hello World", sequence.getSequence());
+        assertEquals(11, sequence.getLength());
     }
 
     @Test
     public void testNegativeLeadingSequence() {
-        StringParserStream stream = new StringParserStream("Hello World");
+        StringStream stream = new StringStream("Hello World");
 
-        String sequence = stream.getLeadingSequence(-100);
+        SequenceHolder<String> sequence = stream.getLeadingSequence(-100);
 
-        assertEquals("", sequence);
+        assertEquals("", sequence.getSequence());
+        assertEquals(0, sequence.getLength());
     }
 
     @Test
     public void testLeadingRun() {
-        StringParserStream stream = new StringParserStream("Hello World");
+        StringStream stream = new StringStream("Hello World");
 
-        String run = stream.getLeadingRun(Character::isAlphabetic);
+        SequenceHolder<String> run = stream.getLeadingRun(Character::isAlphabetic);
 
-        assertEquals("Hello", run);
+        assertEquals("Hello", run.getSequence());
+        assertEquals(5, run.getLength());
     }
 
     @Test
     public void testEmptyLeadingRun() {
-        StringParserStream stream = new StringParserStream("Hello World");
+        StringStream stream = new StringStream("Hello World");
 
-        String run = stream.getLeadingRun(Character::isDigit);
+        SequenceHolder<String> run = stream.getLeadingRun(Character::isDigit);
 
-        assertEquals("", run);
+        assertEquals("", run.getSequence());
+        assertEquals(0, run.getLength());
     }
 
     @Test
     public void testLeadingRunOnEmptyStream() {
-        StringParserStream stream = new StringParserStream("");
+        StringStream stream = new StringStream("");
 
-        String run = stream.getLeadingRun(Character::isAlphabetic);
+        SequenceHolder<String> run = stream.getLeadingRun(Character::isAlphabetic);
 
-        assertEquals("", run);
+        assertEquals("", run.getSequence());
+        assertEquals(0, run.getLength());
     }
 
     @Test
     public void testJump() {
-        StringParserStream stream1 = new StringParserStream("Hello World");
+        StringStream stream1 = new StringStream("Hello World");
 
         ParserStream<String, Character> stream2 = stream1.jump(6);
 
@@ -111,7 +118,7 @@ public class StringParserStreamTest {
 
     @Test
     public void testLargeJump() {
-        StringParserStream stream1 = new StringParserStream("Hello World");
+        StringStream stream1 = new StringStream("Hello World");
 
         ParserStream<String, Character> stream2 = stream1.jump(100);
 
@@ -123,7 +130,7 @@ public class StringParserStreamTest {
 
     @Test
     public void testNegativeJump() {
-        StringParserStream stream1 = new StringParserStream("Hello World");
+        StringStream stream1 = new StringStream("Hello World");
 
         ParserStream<String, Character> stream2 = stream1.jump(-100);
 
@@ -137,9 +144,9 @@ public class StringParserStreamTest {
 
     @Test
     public void testColumnJump() {
-        StringParserStream stream1 = new StringParserStream("Hello World");
+        StringStream stream1 = new StringStream("Hello World");
 
-        StringParserStream stream2 = (StringParserStream) stream1.jump(6);
+        StringStream stream2 = (StringStream) stream1.jump(6);
 
         assertEquals(0, stream1.getColumnNumber());
         assertEquals(6, stream2.getColumnNumber());
@@ -147,9 +154,9 @@ public class StringParserStreamTest {
 
     @Test
     public void testLineColumnJump() {
-        StringParserStream stream1 = new StringParserStream("Hello\nWorld\nFoobar");
+        StringStream stream1 = new StringStream("Hello\nWorld\nFoobar");
 
-        StringParserStream stream2 = (StringParserStream) stream1.jump(100);
+        StringStream stream2 = (StringStream) stream1.jump(100);
 
         assertEquals(1, stream1.getLineNumber());
         assertEquals(0, stream1.getColumnNumber());

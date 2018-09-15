@@ -3,23 +3,23 @@ package io.kpatel.parsers.parsers;
 import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.ParserError;
 import io.kpatel.parsers.Result;
-import io.kpatel.parsers.string.StringParserStream;
+import io.kpatel.parsers.string.StringStream;
 import org.junit.Test;
 
 import java.util.Arrays;
 
 import static io.kpatel.parsers.Parsers.alternate;
-import static io.kpatel.parsers.string.StringParsers.string;
+import static io.kpatel.parsers.Parsers.sequence;
 import static org.junit.Assert.assertEquals;
 
 public class AlternateTest {
     @Test
     public void testAlternateFirstSuccess() {
-        StringParserStream stream = new StringParserStream("Hello World Foobar");
+        StringStream stream = new StringStream("Hello World Foobar");
         Parser<String, String, Character> parser = alternate(Arrays.asList(
-                string("Hello"),
-                string("World"),
-                string("Foobar")));
+                sequence("Hello", () -> "Cannot find Hello"),
+                sequence("World", () -> "Cannot find World"),
+                sequence("Foobar", () -> "Cannot find Foobar")));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -29,11 +29,11 @@ public class AlternateTest {
 
     @Test
     public void testAlternateSecondSuccess() {
-        StringParserStream stream = new StringParserStream("World Foobar Hello");
+        StringStream stream = new StringStream("World Foobar Hello");
         Parser<String, String, Character> parser = alternate(Arrays.asList(
-                string("Hello"),
-                string("World"),
-                string("Foobar")));
+                sequence("Hello", () -> "Cannot find Hello"),
+                sequence("World", () -> "Cannot find World"),
+                sequence("Foobar", () -> "Cannot find Foobar")));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -43,11 +43,11 @@ public class AlternateTest {
 
     @Test
     public void testAlternateThirdSuccess() {
-        StringParserStream stream = new StringParserStream("Foobar Hello World");
+        StringStream stream = new StringStream("Foobar Hello World");
         Parser<String, String, Character> parser = alternate(Arrays.asList(
-                string("Hello"),
-                string("World"),
-                string("Foobar")));
+                sequence("Hello", () -> "Cannot find Hello"),
+                sequence("World", () -> "Cannot find World"),
+                sequence("Foobar", () -> "Cannot find Foobar")));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -57,11 +57,11 @@ public class AlternateTest {
 
     @Test(expected = ParserError.class)
     public void testAlternateFailed() {
-        StringParserStream stream = new StringParserStream("Alpha Hello World Foobar");
+        StringStream stream = new StringStream("Alpha Hello World Foobar");
         Parser<String, String, Character> parser = alternate(Arrays.asList(
-                string("Hello"),
-                string("World"),
-                string("Foobar")));
+                sequence("Hello", () -> "Cannot find Hello"),
+                sequence("World", () -> "Cannot find World"),
+                sequence("Foobar", () -> "Cannot find Foobar")));
         Result<String, ?> result = parser.parse(stream);
 
         result.getOrThrow();

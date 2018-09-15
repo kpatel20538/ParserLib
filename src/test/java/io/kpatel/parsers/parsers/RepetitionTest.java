@@ -3,18 +3,18 @@ package io.kpatel.parsers.parsers;
 import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.ParserError;
 import io.kpatel.parsers.Result;
-import io.kpatel.parsers.string.StringParserStream;
+import io.kpatel.parsers.string.StringStream;
 import org.junit.Test;
 
 import static io.kpatel.parsers.Parsers.*;
-import static io.kpatel.parsers.string.StringParsers.string;
 import static org.junit.Assert.assertEquals;
 
 public class RepetitionTest {
     @Test
     public void testZeroOrMoreSuccess() {
-        StringParserStream stream = new StringParserStream("Hello Hello Hello ");
-        Parser<String, String, Character> parser = zeroOrMoreString(string("Hello "));
+        StringStream stream = new StringStream("Hello Hello Hello ");
+        Parser<String, String, Character> parser = zeroOrMoreString(
+                sequence("Hello ", () -> "Can not find Hello"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -24,8 +24,9 @@ public class RepetitionTest {
 
     @Test()
     public void testZeroOrMoreFailure() {
-        StringParserStream stream = new StringParserStream("World World World ");
-        Parser<String, String, Character> parser = zeroOrMoreString(string("Hello "));
+        StringStream stream = new StringStream("World World World ");
+        Parser<String, String, Character> parser = zeroOrMoreString(
+                sequence("Hello ", () -> "Can not find Hello"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -35,8 +36,9 @@ public class RepetitionTest {
 
     @Test
     public void testOneOrMoreSuccess() {
-        StringParserStream stream = new StringParserStream("Hello Hello Hello ");
-        Parser<String, String, Character> parser = oneOrMoreString(string("Hello "));
+        StringStream stream = new StringStream("Hello Hello Hello ");
+        Parser<String, String, Character> parser = oneOrMoreString(
+                sequence("Hello ", () -> "Can not find Hello"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -46,8 +48,9 @@ public class RepetitionTest {
 
     @Test(expected = ParserError.class)
     public void testOneOrMoreFailure() {
-        StringParserStream stream = new StringParserStream("World World World ");
-        Parser<String, String, Character> parser = oneOrMoreString(string("Hello "));
+        StringStream stream = new StringStream("World World World ");
+        Parser<String, String, Character> parser = oneOrMoreString(
+                sequence("Hello ", () -> "Can not find Hello"));
         Result<String, ?> result = parser.parse(stream);
 
         result.getOrThrow();
@@ -55,8 +58,9 @@ public class RepetitionTest {
 
     @Test
     public void testFixedRepetitionSuccess() {
-        StringParserStream stream = new StringParserStream("1 1 1 1 1 ");
-        Parser<String, String, Character> parser = repetitionString(3, string("1 "));
+        StringStream stream = new StringStream("1 1 1 1 1 ");
+        Parser<String, String, Character> parser = repetitionString(
+                3, sequence("1 ", () -> "Can not find 1"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -66,8 +70,9 @@ public class RepetitionTest {
 
     @Test(expected = ParserError.class)
     public void testFixedRepetitionFailure() {
-        StringParserStream stream = new StringParserStream("1 1 2 2 2 ");
-        Parser<String, String, Character> parser = repetitionString(3, string("1 "));
+        StringStream stream = new StringStream("1 1 2 2 2 ");
+        Parser<String, String, Character> parser = repetitionString(
+                3, sequence("1 ", () -> "Can not find 1"));
         Result<String, ?> result = parser.parse(stream);
 
         result.getOrThrow();
@@ -75,8 +80,9 @@ public class RepetitionTest {
 
     @Test
     public void testRangedRepetitionSuccessInRange() {
-        StringParserStream stream = new StringParserStream("1 1 1 2 2 ");
-        Parser<String, String, Character> parser = repetitionString(2, 4, string("1 "));
+        StringStream stream = new StringStream("1 1 1 2 2 ");
+        Parser<String, String, Character> parser = repetitionString(
+                2, 4, sequence("1 ", () -> "Can not find 1"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -86,8 +92,9 @@ public class RepetitionTest {
 
     @Test
     public void testRangedRepetitionSuccessOutRange() {
-        StringParserStream stream = new StringParserStream("1 1 1 1 1 ");
-        Parser<String, String, Character> parser = repetitionString(2, 4, string("1 "));
+        StringStream stream = new StringStream("1 1 1 1 1 ");
+        Parser<String, String, Character> parser = repetitionString(
+                2, 4, sequence("1 ", () -> "Can not find 1"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -97,8 +104,9 @@ public class RepetitionTest {
 
     @Test
     public void testRangedRepetitionSuccessUpperEdge() {
-        StringParserStream stream = new StringParserStream("1 1 1 1 2 ");
-        Parser<String, String, Character> parser = repetitionString(2, 4, string("1 "));
+        StringStream stream = new StringStream("1 1 1 1 2 ");
+        Parser<String, String, Character> parser = repetitionString(
+                2, 4, sequence("1 ", () -> "Can not find 1"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -108,8 +116,9 @@ public class RepetitionTest {
 
     @Test
     public void testRangedRepetitionSuccessLowerEdge() {
-        StringParserStream stream = new StringParserStream("1 1 2 2 2 ");
-        Parser<String, String, Character> parser = repetitionString(2, 4, string("1 "));
+        StringStream stream = new StringStream("1 1 2 2 2 ");
+        Parser<String, String, Character> parser = repetitionString(
+                2, 4, sequence("1 ", () -> "Can not find 1"));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -119,8 +128,9 @@ public class RepetitionTest {
 
     @Test(expected = ParserError.class)
     public void testRangedRepetitionFailure() {
-        StringParserStream stream = new StringParserStream("1 2 2 2 2 ");
-        Parser<String, String, Character> parser = repetitionString(2, 4, string("1 "));
+        StringStream stream = new StringStream("1 2 2 2 2 ");
+        Parser<String, String, Character> parser = repetitionString(
+                2, 4, sequence("1 ", () -> "Can not find 1"));
         Result<String, ?> result = parser.parse(stream);
 
         result.getOrThrow();

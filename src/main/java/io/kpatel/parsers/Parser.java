@@ -31,7 +31,7 @@ public interface Parser<T, Seq, Itm> {
      * @see Result#map
      */
     default <U> Parser<U, Seq, Itm> map(Function<T, U> mapper) {
-        return stream -> parse(stream).chain((t, remaining) -> Result.success(mapper.apply(t), remaining));
+        return (stream) -> parse(stream).chain((t, remaining) -> Result.success(mapper.apply(t), remaining));
     }
 
     /**
@@ -42,7 +42,7 @@ public interface Parser<T, Seq, Itm> {
      * @see Result#chain
      */
     default <U> Parser<U, Seq, Itm> chain(Function<T, Parser<U, Seq, Itm>> flatMapper) {
-        return stream -> parse(stream).chain((t, remaining) -> flatMapper.apply(t).parse(remaining));
+        return (stream) -> parse(stream).chain((t, remaining) -> flatMapper.apply(t).parse(remaining));
     }
 
     /**
@@ -53,6 +53,6 @@ public interface Parser<T, Seq, Itm> {
      * @see Result#orElse
      */
     default Parser<T, Seq, Itm> orElse(Supplier<Parser<T, Seq, Itm>> alternative) {
-        return stream -> parse(stream).orElse(() -> alternative.get().parse(stream));
+        return (stream) -> parse(stream).orElse(() -> alternative.get().parse(stream));
     }
 }

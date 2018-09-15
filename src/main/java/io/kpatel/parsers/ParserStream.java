@@ -16,7 +16,7 @@ import java.util.function.Predicate;
  * - Self Recurring Generics
  * - Immutable to Rollback by Reference
  * CONSIDER:
- * - Deferring ParserStream::getLeadingSequence and ParserStream::getLeadingRun to StringParserStream
+ * - Deferring ParserStream::getLeadingSequence and ParserStream::getLeadingRun to StringStream
  */
 public interface ParserStream<Seq, Itm> {
     /**
@@ -34,12 +34,17 @@ public interface ParserStream<Seq, Itm> {
     /**
      * WHY: Non Destructive Query Operation for Fixed-Length SubSequences
      */
-    Seq getLeadingSequence(int length);
+    SequenceHolder<Seq> getLeadingSequence(int length);
 
     /**
      * WHY: Non Destructive Query Operation for Variable-Length SubSequences
      */
-    Seq getLeadingRun(Predicate<Itm> predicate);
+    SequenceHolder<Seq> getLeadingRun(Predicate<Itm> predicate);
+
+    /**
+     * WHY: Helper Function to get metadata about a sequence
+     */
+    SequenceHolder<Seq> holdSequence(Seq sequence);
 
     /**
      * WHY: Forward Seek, Needs to Self-Recurring Generics to Preserve Extensibility

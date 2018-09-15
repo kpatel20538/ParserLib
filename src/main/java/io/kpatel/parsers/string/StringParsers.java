@@ -1,16 +1,14 @@
 package io.kpatel.parsers.string;
 
 import io.kpatel.parsers.Parser;
-import io.kpatel.parsers.Parsers;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
-import static io.kpatel.parsers.Parsers.endOfStream;
-import static io.kpatel.parsers.Parsers.postfix;
+import static io.kpatel.parsers.Parsers.*;
+
 
 /**
  * WHAT: Specialized Helper Function for Parsing Strings
@@ -31,99 +29,50 @@ public final class StringParsers {
      */
     public static <T> T runParser(Parser<T, String, Character> parser, String sequence) {
         return postfix(parser, endOfStream())
-                .parse(new StringParserStream(sequence))
+                .parse(new StringStream(sequence))
                 .getOrThrow();
     }
 
-    /**
-     * WHAT: Parse a Character that satisfy a given predicate
-     *
-     * @see Parsers#terminalItem
-     */
-    public static Parser<Character, String, Character> character(
-            Predicate<Character> predicate,
-            Supplier<String> errorMessage) {
-        return Parsers.<String, Character>terminalItem(predicate, errorMessage);
+    public static Parser<Character, String, Character> letter() {
+        return item(Character::isLetter, () -> "Expected a Letter Character");
     }
 
-    /**
-     * WHAT: Parse the given Character
-     *
-     * @see StringParsers#character(Predicate, Supplier)
-     */
-    public static Parser<Character, String, Character> character(Character target) {
-        return character(target::equals, () -> String.format("Cannot find Character %s", target));
+    public static Parser<Character, String, Character> digit() {
+        return item(Character::isDigit, () -> "Expected a Digit Character");
     }
 
-    /**
-     * WHAT: Parse Any Character from the given String
-     *
-     * @see StringParsers#character(Predicate, Supplier)
-     */
-    public static Parser<Character, String, Character> character(String characters) {
-        Set<Character> characterSet = toCharacterSet(characters);
-        return character(characterSet::contains, () -> String.format("Cannot find character from set '%s'", characters));
+    public static Parser<Character, String, Character> alphanum() {
+        return item(Character::isLetterOrDigit, () -> "Expected a Alpha Numeric Character");
     }
 
-    /**
-     * WHAT: Parse the given String
-     *
-     * @see Parsers#terminalSequence(Object, Function, Supplier)
-     */
-    public static Parser<String, String, Character> string(String sequence) {
-        return Parsers.<String, Character>
-                terminalSequence(sequence, String::length, () -> String.format("Cannot Find String %s", sequence));
+    public static Parser<String, String, Character> word(String term) {
+        Predicate<Character> predicate = Character::isLetterOrDigit;
+        return postfix(sequence(term, () -> String.format("Cannot Find Keyword '%s'", term)),
+                peek(item(predicate.negate(), () -> String.format("Cannot Find Word Boundary for Keyword '%s'", term))));
     }
 
-    /**
-     * WHAT: Parse a run of characters that satisfy a given predicate, Will fail is nothing is found
-     */
-    public static Parser<String, String, Character> run(Predicate<Character> predicate, Supplier<String> errorMessage) {
-        return Parsers.terminalRun(predicate, String::length, errorMessage);
+    public static Parser<String, String, Character> letters() {
+        return optionalRun(Character::isLetter);
     }
 
-    /**
-     * WHAT: Parse a run of given character, Will fail is nothing is found
-     */
-    public static Parser<String, String, Character> run(Character target) {
-        return Parsers.terminalRun(target, String::length, () -> String.format("Cannot find character '%s'", target));
+    public static Parser<String, String, Character> digits() {
+        return optionalRun(Character::isDigit);
     }
 
-    /**
-     * WHAT: Parse a run of any character from the give string, Will fail is nothing is found
-     */
-    public static Parser<String, String, Character> run(String characters) {
-        Set<Character> characterSet = toCharacterSet(characters);
-        return Parsers.terminalRun(characterSet, String::length, () -> String.format("Cannot find character from set '%s'", characters));
+    public static Parser<String, String, Character> alphanums() {
+        return optionalRun(Character::isLetterOrDigit);
     }
 
-    /**
-     * WHAT: Parse a run of characters that satisfy a given predicate, Will always succeed
-     */
-    public static Parser<String, String, Character> optionalRun(Predicate<Character> predicate) {
-        return Parsers.terminalOptionalRun(predicate, String::length);
-    }
+    public static Parser<String, String, Character> keywords(Collection<String> words) {
+        ArrayList<String> terms = new ArrayList<>(words);
+        ArrayList<Parser<String, String, Character>> keywordParsers = new ArrayList<>();
 
-    /**
-     * WHAT: Parse a run of given character, Will always succeed
-     */
-    public static Parser<String, String, Character> optionalRun(Character target) {
-        return Parsers.terminalOptionalRun(target, String::length);
-    }
+        terms.sort(Comparator.comparing(String::length).reversed()
+                .thenComparing(Comparator.naturalOrder()));
 
-    /**
-     * WHAT: Parse a run of any character from the give string, Will always succeed
-     */
-    public static Parser<String, String, Character> optionalRun(String characters) {
-        Set<Character> characterSet = toCharacterSet(characters);
-        return Parsers.terminalOptionalRun(characterSet, String::length);
-    }
-
-    private static Set<Character> toCharacterSet(String characters) {
-        Set<Character> characterSet = new HashSet<>(characters.length());
-        for (Character c : characters.toCharArray()) {
-            characterSet.add(c);
+        for (String term : terms) {
+            keywordParsers.add(word(term));
         }
-        return characterSet;
+        return alternate(keywordParsers);
     }
 }

@@ -3,7 +3,7 @@ package io.kpatel.parsers.parsers;
 import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.ParserError;
 import io.kpatel.parsers.Result;
-import io.kpatel.parsers.string.StringParserStream;
+import io.kpatel.parsers.string.StringStream;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -14,8 +14,8 @@ import static org.junit.Assert.assertEquals;
 public class TerminalTest {
     @Test
     public void testCharacterPredicateSuccess() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<Character, String, Character> parser = terminalItem(
+        StringStream stream = new StringStream("Hello World");
+        Parser<Character, String, Character> parser = item(
                 Character::isLetter,
                 () -> "Cannot Match Letter Character");
         Result<Character, ?> result = parser.parse(stream);
@@ -27,8 +27,8 @@ public class TerminalTest {
 
     @Test(expected = ParserError.class)
     public void testCharacterPredicateFailure() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<Character, String, Character> parser = terminalItem(
+        StringStream stream = new StringStream("Hello World");
+        Parser<Character, String, Character> parser = item(
                 Character::isDigit,
                 () -> "Cannot Match Digit Character");
         Result<Character, ?> result = parser.parse(stream);
@@ -38,8 +38,8 @@ public class TerminalTest {
 
     @Test
     public void testCharacterSuccess() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<Character, String, Character> parser = terminalItem(
+        StringStream stream = new StringStream("Hello World");
+        Parser<Character, String, Character> parser = item(
                 'H',
                 () -> "Cannot find character 'H'");
         Result<Character, ?> result = parser.parse(stream);
@@ -51,8 +51,8 @@ public class TerminalTest {
 
     @Test(expected = ParserError.class)
     public void testCharacterFailure() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<Character, String, Character> parser = terminalItem(
+        StringStream stream = new StringStream("Hello World");
+        Parser<Character, String, Character> parser = item(
                 'W',
                 () -> "Cannot find character 'W'");
         Result<Character, ?> result = parser.parse(stream);
@@ -62,8 +62,8 @@ public class TerminalTest {
 
     @Test
     public void testCharacterSetSuccess() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<Character, String, Character> parser = terminalItem(
+        StringStream stream = new StringStream("Hello World");
+        Parser<Character, String, Character> parser = item(
                 Arrays.asList('e', 'H', 'l', 'o'),
                 () -> "Cannot find Letter from Set");
         Result<Character, ?> result = parser.parse(stream);
@@ -75,8 +75,8 @@ public class TerminalTest {
 
     @Test(expected = ParserError.class)
     public void testCharacterSetFailure() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<Character, String, Character> parser = terminalItem(
+        StringStream stream = new StringStream("Hello World");
+        Parser<Character, String, Character> parser = item(
                 Arrays.asList('d', 'l', 'o', 'r', 'W'),
                 () -> "Cannot find Letter from Set");
         Result<Character, ?> result = parser.parse(stream);
@@ -86,9 +86,9 @@ public class TerminalTest {
 
     @Test
     public void testTerminalSequenceSuccess() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<String, String, Character> parser = terminalSequence(
-                "Hello", String::length, () -> "Cannot find Hello");
+        StringStream stream = new StringStream("Hello World");
+        Parser<String, String, Character> parser = sequence(
+                "Hello", () -> "Cannot find Hello");
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -98,9 +98,9 @@ public class TerminalTest {
 
     @Test(expected = ParserError.class)
     public void testTerminalSequenceFailure() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<String, String, Character> parser = terminalSequence(
-                "Helper", String::length, () -> "Cannot find Helper");
+        StringStream stream = new StringStream("Hello World");
+        Parser<String, String, Character> parser = sequence(
+                "Helper", () -> "Cannot find Helper");
         Result<String, ?> result = parser.parse(stream);
 
         result.getOrThrow();
@@ -108,9 +108,8 @@ public class TerminalTest {
 
     @Test
     public void testOptionalRunPredicateSuccess() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<String, String, Character> parser = terminalOptionalRun(
-                Character::isLetter, String::length);
+        StringStream stream = new StringStream("Hello World");
+        Parser<String, String, Character> parser = optionalRun(Character::isLetter);
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -120,9 +119,8 @@ public class TerminalTest {
 
     @Test
     public void testOptionalRunPredicateFailure() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<String, String, Character> parser = terminalOptionalRun(
-                Character::isDigit, String::length);
+        StringStream stream = new StringStream("Hello World");
+        Parser<String, String, Character> parser = optionalRun(Character::isDigit);
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -132,9 +130,8 @@ public class TerminalTest {
 
     @Test
     public void testOptionalRunCharacterSuccess() {
-        StringParserStream stream = new StringParserStream("HHHHH WWWWW");
-        Parser<String, String, Character> parser = terminalOptionalRun(
-                'H', String::length);
+        StringStream stream = new StringStream("HHHHH WWWWW");
+        Parser<String, String, Character> parser = optionalRun('H');
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -144,9 +141,8 @@ public class TerminalTest {
 
     @Test
     public void testOptionalRunCharacterFailure() {
-        StringParserStream stream = new StringParserStream("HHHHH WWWWW");
-        Parser<String, String, Character> parser = terminalOptionalRun(
-                'W', String::length);
+        StringStream stream = new StringStream("HHHHH WWWWW");
+        Parser<String, String, Character> parser = optionalRun('W');
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -156,9 +152,9 @@ public class TerminalTest {
 
     @Test
     public void testOptionalRunCharacterSetSuccess() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<String, String, Character> parser = terminalOptionalRun(
-                Arrays.asList('e', 'H', 'l', 'o'), String::length);
+        StringStream stream = new StringStream("Hello World");
+        Parser<String, String, Character> parser = optionalRun(
+                Arrays.asList('e', 'H', 'l', 'o'));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -168,9 +164,9 @@ public class TerminalTest {
 
     @Test
     public void testOptionalRunCharacterSetFailure() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<String, String, Character> parser = terminalOptionalRun(
-                Arrays.asList('d', 'l', 'o', 'r', 'W'), String::length);
+        StringStream stream = new StringStream("Hello World");
+        Parser<String, String, Character> parser = optionalRun(
+                Arrays.asList('d', 'l', 'o', 'r', 'W'));
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -180,10 +176,9 @@ public class TerminalTest {
 
     @Test
     public void testRunPredicateSuccess() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<String, String, Character> parser = terminalRun(
-                Character::isLetter, String::length,
-                () -> "Cannot Find Run of Letters");
+        StringStream stream = new StringStream("Hello World");
+        Parser<String, String, Character> parser = run(
+                Character::isLetter, () -> "Cannot Find Run of Letters");
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -193,10 +188,9 @@ public class TerminalTest {
 
     @Test(expected = ParserError.class)
     public void testRunPredicateFailure() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<String, String, Character> parser = terminalRun(
-                Character::isDigit, String::length,
-                () -> "Cannot Find Run of Digits");
+        StringStream stream = new StringStream("Hello World");
+        Parser<String, String, Character> parser = run(
+                Character::isDigit, () -> "Cannot Find Run of Digits");
         Result<String, ?> result = parser.parse(stream);
 
         result.getOrThrow();
@@ -204,10 +198,9 @@ public class TerminalTest {
 
     @Test
     public void testRunCharacterSuccess() {
-        StringParserStream stream = new StringParserStream("HHHHH WWWWW");
-        Parser<String, String, Character> parser = terminalRun(
-                'H', String::length,
-                () -> "Cannot Find Run of Character W");
+        StringStream stream = new StringStream("HHHHH WWWWW");
+        Parser<String, String, Character> parser = run(
+                'H', () -> "Cannot Find Run of Character W");
         Result<String, ?> result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -217,10 +210,9 @@ public class TerminalTest {
 
     @Test(expected = ParserError.class)
     public void testRunCharacterFailure() {
-        StringParserStream stream = new StringParserStream("HHHHH WWWWW");
-        Parser<String, String, Character> parser = terminalRun(
-                'W', String::length,
-                () -> "Cannot Find Run of Character W");
+        StringStream stream = new StringStream("HHHHH WWWWW");
+        Parser<String, String, Character> parser = run(
+                'W', () -> "Cannot Find Run of Character W");
         Result<String, ?> result = parser.parse(stream);
 
         result.getOrThrow();
@@ -228,9 +220,9 @@ public class TerminalTest {
 
     @Test
     public void testRunCharacterSetSuccess() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<String, String, Character> parser = terminalRun(
-                Arrays.asList('e', 'H', 'l', 'o'), String::length,
+        StringStream stream = new StringStream("Hello World");
+        Parser<String, String, Character> parser = run(
+                Arrays.asList('e', 'H', 'l', 'o'),
                 () -> "Cannot Find Run of Character Set");
         Result<String, ?> result = parser.parse(stream);
 
@@ -241,9 +233,9 @@ public class TerminalTest {
 
     @Test(expected = ParserError.class)
     public void testRunCharacterSetFailure() {
-        StringParserStream stream = new StringParserStream("Hello World");
-        Parser<String, String, Character> parser = terminalRun(
-                Arrays.asList('d', 'l', 'o', 'r', 'W'), String::length,
+        StringStream stream = new StringStream("Hello World");
+        Parser<String, String, Character> parser = run(
+                Arrays.asList('d', 'l', 'o', 'r', 'W'),
                 () -> "Cannot Find Run of Character Set");
         Result<String, ?> result = parser.parse(stream);
 

@@ -1,6 +1,7 @@
 package io.kpatel.parsers.string;
 
 import io.kpatel.parsers.ParserStream;
+import io.kpatel.parsers.SequenceHolder;
 
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -8,20 +9,20 @@ import java.util.function.Predicate;
 /**
  * WHY: Specialize ParserStream for Stream
  */
-public class StringParserStream implements ParserStream<String, Character> {
+public class StringStream implements ParserStream<String, Character> {
     private final String stream;
     private final int position;
     private final int lineNumber;
     private final int columnNumber;
 
-    public StringParserStream(String stream) {
+    public StringStream(String stream) {
         this.stream = stream;
         this.position = 0;
         this.lineNumber = 1;
         this.columnNumber = 0;
     }
 
-    private StringParserStream(String stream, int position, int lineNumber, int columnNumber) {
+    private StringStream(String stream, int position, int lineNumber, int columnNumber) {
         this.stream = stream;
         this.position = position;
         this.lineNumber = lineNumber;
@@ -36,32 +37,40 @@ public class StringParserStream implements ParserStream<String, Character> {
     }
 
     @Override
-    public String getLeadingSequence(int length) {
+    public SequenceHolder<String> getLeadingSequence(int length) {
         if (0 < length && position < stream.length()) {
             int endPosition = position + length;
             if (stream.length() <= endPosition) {
                 endPosition = stream.length();
             }
-            return stream.substring(position, endPosition);
+
+            return holdSequence(stream.substring(position, endPosition));
         }
-        return "";
+        return holdSequence("");
     }
 
     @Override
-    public String getLeadingRun(Predicate<Character> predicate) {
+    public SequenceHolder<String> getLeadingRun(Predicate<Character> predicate) {
         if (position < stream.length()) {
             int endPosition = position;
             while (endPosition < stream.length() && predicate.test(stream.charAt(endPosition)))
                 endPosition++;
-            return stream.substring(position, endPosition);
+
+            return holdSequence(stream.substring(position, endPosition));
         }
-        return "";
+        return holdSequence("");
+    }
+
+    @Override
+    public SequenceHolder<String> holdSequence(String sequence) {
+        return new SequenceHolder<>(sequence.length(), sequence);
     }
 
     @Override
     public ParserStream<String, Character> jump(int n) {
         if (0 < n) {
-            String stage = getLeadingSequence(n);
+            SequenceHolder<String> holder = getLeadingSequence(n);
+            String stage = holder.getSequence();
             int lineCount = 0;
             int colCount = 0;
             for (int idx = stage.length() - 1; idx >= 0; idx--) {
@@ -77,7 +86,7 @@ public class StringParserStream implements ParserStream<String, Character> {
             } else {
                 lineCount += lineNumber;
             }
-            return new StringParserStream(
+            return new StringStream(
                     stream, position + n,
                     lineCount, colCount);
         }
