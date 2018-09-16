@@ -22,7 +22,7 @@ public class DelimitedTest {
         assertEquals("", item);
     }
 
-    @Test()
+    @Test
     public void testDelimitedOne() {
         var stream = new StringStream("Hello");
         Parser<String, String, Character> parser = RepetitionParsers.delimitedString(
@@ -35,7 +35,7 @@ public class DelimitedTest {
         assertEquals("Hello", item);
     }
 
-    @Test()
+    @Test
     public void testDelimitedMultiple() {
         var stream = new StringStream("Hello,Hello,Hello");
         Parser<String, String, Character> parser = RepetitionParsers.delimitedString(

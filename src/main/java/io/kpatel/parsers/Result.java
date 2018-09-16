@@ -2,19 +2,22 @@ package io.kpatel.parsers;
 
 import io.kpatel.parsers.stream.ParserStream;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * WHY: To Indicate whether a parser succeed or failure
- * NEEDS:
+ * INTENT: To Indicate whether a parser succeed or failure
+ * GUARANTEES:
  * - A Total Disjoint between Success and Failure Cases
  * - Only one source for pure Success and Failure Cases
  * - Composing Operations with other Results
  * - Unwrapping Operations to retrieve actual value
- * TOOLS:
+ * - Success Instance contain a accepted values and the remaining stream
+ * - Failure Instance contain a pair error message suppliers (Used in getOrThrow)
+ * TECHNIQUES:
  * - Package-Private Constructor w/ Abstract Base Class and Final Child Classes
  * - Static Factory Methods
  * - Visitor Pattern
@@ -41,8 +44,8 @@ public abstract class Result<T, Seq, Itm> {
      * WHAT: Factory Operation for Failure Case
      * WHY: Only source for pure Failure Case
      */
-    public static <T, Seq, Itm> Result<T, Seq, Itm> failure(String errorMessage, ParserStream<Seq, Itm> remaining) {
-        return new Failure<>(errorMessage, remaining);
+    public static <T, Seq, Itm> Result<T, Seq, Itm> failure(Supplier<String> context, Supplier<String> errorMessage) {
+        return new Failure<>(context, errorMessage);
     }
 
     /**
@@ -89,12 +92,14 @@ public abstract class Result<T, Seq, Itm> {
 
     /**
      * WHAT: Visitor Pattern seeking the Success Case
-     * WHY: Indicates Success Case
+     * WHY: Wraps value in Optional if present, or returns empty
      */
-
-
     public abstract Optional<T> get();
 
+    /**
+     * WHAT: Visitor Pattern seeking the Success Case
+     * WHY: Indicates Success Case
+     */
     public final boolean isSuccess() {
         return get().isPresent();
     }
@@ -102,13 +107,7 @@ public abstract class Result<T, Seq, Itm> {
 
 
 final class Success<T, Seq, Itm> extends Result<T, Seq, Itm> {
-    /**
-     * WHY: Storage for actual value
-     */
     private final T result;
-    /**
-     * WHY: For use in composition operations
-     */
     private final ParserStream<Seq, Itm> remaining;
 
     /**
@@ -117,8 +116,10 @@ final class Success<T, Seq, Itm> extends Result<T, Seq, Itm> {
      * WHY: Result must either a Success Instance, or a Failure Instance
      */
     Success(T result, ParserStream<Seq, Itm> remaining) {
-        this.result = result;
-        this.remaining = remaining;
+        this.result = Objects.requireNonNull(result,
+                "Result must not be Null");
+        this.remaining = Objects.requireNonNull(remaining,
+                "Parser Stream must not be Null");
     }
 
     public T getResult() {
@@ -181,10 +182,10 @@ final class Success<T, Seq, Itm> extends Result<T, Seq, Itm> {
     }
 
     /**
-     * WHAT: return true
+     * WHAT: return wrapped value
      *
-     * @see Result#isSuccess
-     * @see Failure#isSuccess
+     * @see Result#get
+     * @see Failure#get
      */
     public Optional<T> get() {
         return Optional.of(getResult());
@@ -193,31 +194,35 @@ final class Success<T, Seq, Itm> extends Result<T, Seq, Itm> {
 
 final class Failure<T, Seq, Itm> extends Result<T, Seq, Itm> {
     /**
-     * WHY: Explanation of Error
+     * WHY: The State of Stream during the Error
      */
-    private final String errorMessage;
+    private final Supplier<String> context;
     /**
-     * WHY: For use in Introspection and Error Handling
+     * WHY: The Explanation of Error
      */
-    private final ParserStream<Seq, Itm> remaining;
+    private final Supplier<String> errorMessage;
+
 
     /**
      * WHAT: A package-private constructor of an abstract class to ensure a closed
      * inheritance hierarchy and no base class instances.
      * WHY: Result must either a Success Instance, or a Failure Instance
      */
-    Failure(String errorMessage, ParserStream<Seq, Itm> remaining) {
-        this.errorMessage = errorMessage;
-        this.remaining = remaining;
+    Failure(Supplier<String> context, Supplier<String> errorMessage) {
+        this.context = Objects.requireNonNull(context,
+                "Context Supplier must not be null");
+        this.errorMessage = Objects.requireNonNull(errorMessage,
+                "Error Message Supplier must not be null");
     }
 
-    public String getErrorMessage() {
+    public Supplier<String> getContext() {
+        return context;
+    }
+
+    public Supplier<String> getErrorMessage() {
         return errorMessage;
     }
 
-    public ParserStream<Seq, Itm> getRemaining() {
-        return remaining;
-    }
 
     /**
      * WHAT: Nothing in this case
@@ -226,7 +231,7 @@ final class Failure<T, Seq, Itm> extends Result<T, Seq, Itm> {
      * @see Success#map
      */
     public <U> Result<U, Seq, Itm> map(Function<T, U> mapper) {
-        return Result.failure(getErrorMessage(), getRemaining());
+        return Result.failure(getContext(), getErrorMessage());
     }
 
     /**
@@ -237,11 +242,11 @@ final class Failure<T, Seq, Itm> extends Result<T, Seq, Itm> {
      */
     public <U> Result<U, Seq, Itm> chain(
             BiFunction<T, ParserStream<Seq, Itm>, Result<U, Seq, Itm>> flatMapper) {
-        return Result.failure(getErrorMessage(), getRemaining());
+        return Result.failure(getContext(), getErrorMessage());
     }
 
     /**
-     * WHAT: Transform Failure to Success and rollback stream
+     * WHAT: Transform Failure to Success or Failure
      *
      * @see Result#orElse
      */
@@ -251,17 +256,19 @@ final class Failure<T, Seq, Itm> extends Result<T, Seq, Itm> {
 
     /**
      * WHAT: No Result, Throw Error
+     * NOTE: This operation is intended to be invoked once per instance,
+     * As such Caching will not be needed for normal use.
      *
      * @see Result#orElse
      * @see Success#orElse
      */
     public T getOrThrow() {
         throw new ParserError(String.format("[%s] : %s",
-                getRemaining().getErrorHeader(), getErrorMessage()));
+                getContext().get(), getErrorMessage().get()));
     }
 
     /**
-     * WHAT: No Result, consult supplier
+     * WHAT: Yield from supplier
      *
      * @see Result#orElse
      * @see Success#orElse
@@ -271,12 +278,14 @@ final class Failure<T, Seq, Itm> extends Result<T, Seq, Itm> {
     }
 
     /**
-     * WHAT: return false
+     * WHAT: return empty
      *
-     * @see Result#isSuccess
-     * @see Failure#isSuccess
+     * @see Result#get
+     * @see Failure#get
      */
     public Optional<T> get() {
         return Optional.empty();
     }
+
+
 }

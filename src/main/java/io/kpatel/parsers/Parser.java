@@ -2,20 +2,26 @@ package io.kpatel.parsers;
 
 import io.kpatel.parsers.stream.ParserStream;
 
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+//TODO: Consider Adding Default Methods, filter, omit, optional, peek
+//TODO: Consider Removing All Default Methods
+
 /**
- * WHY: Generalize the the conversion of a Linear Structure to some Object
- * NEEDS:
- * - Simple Construction
- * - Possibility of Failure
- * - A Generalized Immutable Linear Structure
- * - Composing Operations
- * TOOLS:
- * - Lambda Expressions
- * - Result, A Closed Hierarchy that can compose success and failures states.
- * - ParserStream, A Generalization of Immutable Linear Structures
+ * INTENT: A Composable Generic Interface conversion of a Stream to some Non-Null Object
+ * REQUIREMENTS:
+ * - Must be Pure Function
+ * - Must return and a Success is the target Object was found
+ * - Must return and a Failure if a Recoverable Error occurred
+ * - Must throw a Runtime Exception for Unrecoverable Error.
+ *   (preference is toward {@link ParserError})
+ * RECOMMENDATIONS:
+ * - Do not capture {@link ParserError} in {@link Parser}, The Stream may not
+ *   guaranteed to be in a valid state for Parsing.
+ * - Prefer Lambda Expressions over Class Implementation to help reduce
+ *   dependence on external state.
  */
 @FunctionalInterface
 public interface Parser<T, Seq, Itm> {
@@ -26,35 +32,38 @@ public interface Parser<T, Seq, Itm> {
     Result<T, Seq, Itm> parse(ParserStream<Seq, Itm> stream);
 
     /**
-     * WHAT: Deferring to Result object
-     * Transform result value w/o altering the stream w/ no chance of Failure
-     * WHY: Composing Operations for Success to Success Case
-     *
+     * INTENT: Transform any accepted value without altering the stream with
+     *         no chance of recoverable failure
      * @see Result#map
      */
     default <U> Parser<U, Seq, Itm> map(Function<T, U> mapper) {
-        return (stream) -> parse(stream).chain((t, remaining) -> Result.success(mapper.apply(t), remaining));
+        Objects.requireNonNull(mapper,
+                "Mapping Function must not be null");
+        return stream -> parse(stream).chain((t, remaining) ->
+                Result.success(mapper.apply(t), remaining));
     }
 
     /**
-     * WHAT: Deferring to Result object
-     * Transform result value and stream w/ chance of Failure
-     * WHY: Composing Operations for Success to Success/Failure Case
-     *
+     * INTENT: Transform any accepted value without altering the stream with
+     *         a chance of recoverable failure
      * @see Result#chain
      */
     default <U> Parser<U, Seq, Itm> chain(Function<T, Parser<U, Seq, Itm>> flatMapper) {
-        return (stream) -> parse(stream).chain((t, remaining) -> flatMapper.apply(t).parse(remaining));
+        Objects.requireNonNull(flatMapper,
+                "Flat Mapping Function must not be null");
+        return stream -> parse(stream).chain((t, remaining) ->
+                flatMapper.apply(t).parse(remaining));
     }
 
     /**
-     * WHAT: Deferring to Result object
-     * Transform Failure to Success and rollback stream
-     * WHY: Composing Operations for Failure to Success/Failure Case
-     *
+     * INTENT: Transform any recoverable failure without altering the stream
+     *         with a chance of recoverable failure.
      * @see Result#orElse
      */
     default Parser<T, Seq, Itm> orElse(Supplier<Parser<T, Seq, Itm>> alternative) {
-        return (stream) -> parse(stream).orElse(() -> alternative.get().parse(stream));
+        Objects.requireNonNull(alternative,
+                "Alternative Supplier Function must not be null");
+        return stream -> parse(stream).orElse(() ->
+                alternative.get().parse(stream));
     }
 }

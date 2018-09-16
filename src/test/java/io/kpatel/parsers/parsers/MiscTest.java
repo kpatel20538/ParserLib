@@ -1,7 +1,6 @@
 package io.kpatel.parsers.parsers;
 
 import io.kpatel.parsers.Parser;
-import io.kpatel.parsers.ParserError;
 import io.kpatel.parsers.prebuilt.AffixParsers;
 import io.kpatel.parsers.prebuilt.TerminalParsers;
 import io.kpatel.parsers.stream.StringStream;
@@ -9,9 +8,8 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static io.kpatel.parsers.prebuilt.Parsers.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static io.kpatel.parsers.prebuilt.MiscParsers.*;
+import static org.junit.Assert.*;
 
 public class MiscTest {
     @Test
@@ -25,13 +23,13 @@ public class MiscTest {
         assertNotNull(item);
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testEndOfStreamFailure() {
         var stream = new StringStream("Hello World");
         Parser<Object, String, Character> parser = TerminalParsers.endOfStream();
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
@@ -49,7 +47,7 @@ public class MiscTest {
         assertEquals("Hello World", item);
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testPeekFailure() {
         var stream = new StringStream("Hello World");
         Parser<String, String, Character> parser = AffixParsers.prefix(
@@ -59,7 +57,7 @@ public class MiscTest {
                         () -> "Cannot Find Hello World"));
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
@@ -77,7 +75,7 @@ public class MiscTest {
         assertEquals("Hello", item);
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testExceptionFailureBase() {
         var stream = new StringStream("Hello World");
         Parser<String, String, Character> parser = exception(
@@ -87,10 +85,10 @@ public class MiscTest {
                 () -> "Found a W Character");
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testExceptionFailureExcept() {
         var stream = new StringStream("Hello World");
         Parser<String, String, Character> parser = exception(
@@ -100,7 +98,7 @@ public class MiscTest {
                 () -> "Found a H Character");
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
@@ -119,7 +117,7 @@ public class MiscTest {
         assertEquals("Hello World", item);
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testPipeFailureLeft() {
         var stream = new StringStream("Alpha World");
         Parser<String, String, Character> parser = pipe(
@@ -130,10 +128,10 @@ public class MiscTest {
                 String::concat);
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testPipeFailureRight() {
         var stream = new StringStream("Hello Alpha");
         Parser<String, String, Character> parser = pipe(
@@ -144,7 +142,7 @@ public class MiscTest {
                 String::concat);
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
@@ -162,7 +160,7 @@ public class MiscTest {
         assertEquals(Map.entry("Hello ", "World"), item);
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testEntryFailureKey() {
         var stream = new StringStream("Alpha World");
         Parser<Map.Entry<String, String>, String, Character> parser = entry(
@@ -172,10 +170,10 @@ public class MiscTest {
                         () -> "Cannot Find World"));
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void tesEntryFailureValue() {
         var stream = new StringStream("Hello Alpha");
         Parser<Map.Entry<String, String>, String, Character> parser = entry(
@@ -185,6 +183,6 @@ public class MiscTest {
                         () -> "Cannot Find World"));
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 }

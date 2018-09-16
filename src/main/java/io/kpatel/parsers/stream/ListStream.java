@@ -2,18 +2,25 @@ package io.kpatel.parsers.stream;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
- * WHY: Specialize ParserStream for Stream
+ * WHAT: Specialized ParserStream for Lists of Tokens
+ * NOTE:
+ * - This Implementation is keeps track of Line and Col numbers
+ * - This Implementation is Strictly Immutable.
+ * @see ParserStream
  */
 public final class ListStream<Tkn> implements ParserStream<List<Tkn>, Tkn> {
     private final List<Tkn> stream;
     private final int position;
 
     public ListStream(List<Tkn> stream) {
-        this.stream = Collections.unmodifiableList(stream);
+        this.stream = Objects.requireNonNull(Collections.unmodifiableList(stream),
+                "List of Token must not be null");
         this.position = 0;
     }
 
@@ -69,10 +76,9 @@ public final class ListStream<Tkn> implements ParserStream<List<Tkn>, Tkn> {
     }
 
     @Override
-    public String getErrorHeader() {
-        return getLeadingItem()
-                .map(Object::toString)
-                .orElse("End Of Stream");
+    public Supplier<String> getErrorContext() {
+        final var pos = position;
+        return () -> String.format("List Stream @ Pos : %s", pos);
     }
 }
 

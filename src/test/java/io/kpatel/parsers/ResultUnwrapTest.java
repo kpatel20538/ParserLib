@@ -19,7 +19,7 @@ public class ResultUnwrapTest {
     @Test(expected = ParserError.class)
     public void testGetOrThrowFailure() {
         var parserStream = new StringStream("");
-        var result = Result.failure("Error", parserStream);
+        var result = Result.failure(parserStream.getErrorContext(), () -> "Error");
 
         result.getOrThrow();
     }
@@ -37,7 +37,7 @@ public class ResultUnwrapTest {
     @Test
     public void testGetOrElseFailure() {
         var parserStream = new StringStream("");
-        var result = Result.failure("Error", parserStream);
+        var result = Result.failure(parserStream.getErrorContext(), () -> "Error");
 
         var item = result.getOrElse(() -> "World");
 
@@ -55,8 +55,29 @@ public class ResultUnwrapTest {
     @Test
     public void testIsFailure() {
         var parserStream = new StringStream("");
-        var result = Result.failure("Error", parserStream);
+        var result = Result.failure(parserStream.getErrorContext(), () -> "Error");
 
         assertFalse(result.isSuccess());
+    }
+
+    @Test
+    public void tesOptionalSuccess() {
+        var parserStream = new StringStream("");
+        var result = Result.success("Hello", parserStream);
+
+        var opt = result.get();
+
+        assertTrue(opt.isPresent());
+        assertEquals("Hello", opt.get());
+    }
+
+    @Test
+    public void testOptionalFailure() {
+        var parserStream = new StringStream("");
+        var result = Result.failure(parserStream.getErrorContext(), () -> "Error");
+
+        var opt = result.get();
+
+        assertFalse(opt.isPresent());
     }
 }

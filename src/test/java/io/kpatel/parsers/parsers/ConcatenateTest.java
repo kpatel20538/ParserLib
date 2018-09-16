@@ -1,7 +1,6 @@
 package io.kpatel.parsers.parsers;
 
 import io.kpatel.parsers.Parser;
-import io.kpatel.parsers.ParserError;
 import io.kpatel.parsers.stream.StringStream;
 import org.junit.Test;
 
@@ -10,6 +9,7 @@ import java.util.Arrays;
 import static io.kpatel.parsers.prebuilt.RepetitionParsers.concatenateString;
 import static io.kpatel.parsers.prebuilt.TerminalParsers.sequence;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class ConcatenateTest {
     @Test
@@ -26,7 +26,7 @@ public class ConcatenateTest {
         assertEquals("Hello World Foobar ", item);
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testConcatStringFirstFailure() {
         var stream = new StringStream("Alpha World Foobar ");
         Parser<String, String, Character> parser = concatenateString(Arrays.asList(
@@ -35,10 +35,10 @@ public class ConcatenateTest {
                 sequence("Foobar ", () -> "Cannot find Foobar")));
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testConcatStringSecondFailure() {
         var stream = new StringStream("Hello Alpha Foobar ");
         Parser<String, String, Character> parser = concatenateString(Arrays.asList(
@@ -47,10 +47,10 @@ public class ConcatenateTest {
                 sequence("Foobar ", () -> "Cannot find Foobar")));
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testConcatStringThirdFailure() {
         var stream = new StringStream("Hello World Alpha ");
         Parser<String, String, Character> parser = concatenateString(Arrays.asList(
@@ -59,6 +59,6 @@ public class ConcatenateTest {
                 sequence("Foobar ", () -> "Cannot find Foobar")));
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 }

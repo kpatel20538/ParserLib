@@ -6,10 +6,17 @@ import io.kpatel.parsers.stream.SequenceHolder;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+/**
+ * INTENT: Top Level Generic Factories for Parsers handling ParserStream Primitives
+ *
+ * @see Parser
+ * @see io.kpatel.parsers.stream.ParserStream
+ */
 public final class TerminalParsers {
     private final static Object eofSentinel = new Object();
 
@@ -17,44 +24,60 @@ public final class TerminalParsers {
     }
 
     /**
-     * WHAT: A Parser that fails if their is still input to take in.
+     * USAGE: Create a parser that will fails if their is still input to take in.
      */
     public static <Seq, Itm>
     Parser<Object, Seq, Itm> endOfStream() {
         return stream -> stream.atEndOfStream()
                 ? Result.success(eofSentinel, stream)
-                : Result.failure("Expected End of Stream", stream);
+                : Result.failure(stream.getErrorContext(), () -> "Expected End of Stream");
     }
 
     /**
-     * WHAT: Parse an item that satisfy a given predicate
+     * USAGE: Create a parser that will accept any item
+     * - Will fail if at end of stream
+     */
+    public static <Seq, Itm>
+    Parser<Itm, Seq, Itm> item() {
+        return stream -> stream.getLeadingItem()
+                .map(i -> Result.success(i, stream.jump(1)))
+                .orElseGet(() -> Result.failure(stream.getErrorContext(), () -> "Unexpected End of Stream"));
+    }
+
+    /**
+     * USAGE: Create a parser that will accept an item that satisfy a given predicate
+     * - Will fail if at end of stream
      */
     public static <Seq, Itm>
     Parser<Itm, Seq, Itm> item(
             Predicate<Itm> predicate,
             Supplier<String> errorMessage) {
+        Objects.requireNonNull(predicate,
+                "Predicate must not be null");
         return stream -> stream.getLeadingItem()
                 .filter(predicate)
                 .map(i -> Result.success(i, stream.jump(1)))
-                .orElseGet(() -> Result.failure(errorMessage.get(), stream));
+                .orElseGet(() -> Result.failure(stream.getErrorContext(), errorMessage));
     }
 
     /**
-     * WHAT: Parse the given Character
-     *
-     * @see StringParsers(Predicate, Supplier)
+     * USAGE: Create a parser that will accept an item that satisfy a given predicate
+     * - Will fail if at end of stream
+     * - items are checked with {@link Object#equals(Object)}
      */
     public static <Seq, Itm>
     Parser<Itm, Seq, Itm> item(
             Itm target,
             Supplier<String> errorMessage) {
+        Objects.requireNonNull(target,
+                "Item must not be null");
         return item(target::equals, errorMessage);
     }
 
     /**
-     * WHAT: Parse Any Character from the given String
-     *
-     * @see StringParsers(Predicate, Supplier)
+     * USAGE: Create a parser that will accept an item that is within the given collection
+     * - Will fail if at end of stream
+     * - items are checked with {@link Object#hashCode()} and {@link Object#equals(Object)}
      */
     public static <Seq, Itm>
     Parser<Itm, Seq, Itm> item(
@@ -65,47 +88,59 @@ public final class TerminalParsers {
     }
 
     /**
-     * WHAT: Parse as sequence of items
+     * USAGE: Create a parser that will accept the given sequence
+     * - items are checked with {@link Object#equals(Object)}
      */
     public static <Seq, Itm>
     Parser<Seq, Seq, Itm> sequence(
             Seq sequence,
             Supplier<String> errorMessage) {
+        Objects.requireNonNull(sequence,
+                "Sequence must not be null");
         return stream -> {
-            SequenceHolder<Seq> sequenceHolder = stream.holdSequence(sequence);
-            int size = sequenceHolder.getLength();
-            SequenceHolder<Seq> leadingHolder = stream.getLeadingSequence(size);
-            Seq leading = leadingHolder.getSequence();
-            return leading.equals(sequence)
-                    ? Result.success(leading, stream.jump(leadingHolder.getLength()))
-                    : Result.failure(errorMessage.get(), stream);
+            SequenceHolder<Seq> holder = stream.holdSequence(sequence);
+            int size = holder.getLength();
+            SequenceHolder<Seq> leading = stream.getLeadingSequence(size);
+            Seq seq = leading.getSequence();
+            return seq.equals(sequence)
+                    ? Result.success(seq, stream.jump(leading.getLength()))
+                    : Result.failure(stream.getErrorContext(), errorMessage);
         };
     }
 
     /**
-     * WHAT: Parse a run of item that satisfy a given predicate, Will always succeed
+     * USAGE: Create a parser that will accept a run of items that satisfy a given predicate,
+     * - Will always succeed
      */
     public static <Seq, Itm>
     Parser<Seq, Seq, Itm> optionalRun(
             Predicate<Itm> predicate) {
+        Objects.requireNonNull(predicate,
+                "Predicate must not be null");
         return stream -> {
             SequenceHolder<Seq> holder = stream.getLeadingRun(predicate);
             int size = holder.getLength();
-            return Result.success(holder.getSequence(), stream.jump(size));
-        };
+            return Result.success(holder.getSequence(), stream.jump(size)); };
     }
 
+
     /**
-     * WHAT: Parse a run of given character, Will always succeed
+     * USAGE: Create a parser that will accept a run of given items
+     * - Will always succeed
+     * - items are checked with {@link Object#equals(Object)}
      */
     public static <Seq, Itm>
     Parser<Seq, Seq, Itm> optionalRun(
             Itm target) {
+        Objects.requireNonNull(target,
+                "Item must not be null");
         return optionalRun(target::equals);
     }
 
     /**
-     * WHAT: Parse a run of any character from the give string, Will always succeed
+     * USAGE: Create a parser that will accept a run of any items from the give collection
+     * - Will always succeed
+     * - items are checked with {@link Object#hashCode()} and {@link Object#equals(Object)}
      */
     public static <Seq, Itm>
     Parser<Seq, Seq, Itm> optionalRun(
@@ -115,36 +150,45 @@ public final class TerminalParsers {
     }
 
     /**
-     * WHAT: Parse a run of characters that satisfy a given predicate, Will fail is nothing is found
+     * USAGE: Create a parser that will accept a run of items that satisfy a given predicate,
+     * - Will fail if no items satisfy a given predicate
      */
     public static <Seq, Itm>
     Parser<Seq, Seq, Itm> run(
             Predicate<Itm> predicate,
             Supplier<String> errorMessage) {
-        return Parsers.<Itm, Seq, Itm>peek(item(predicate, errorMessage))
+        Objects.requireNonNull(predicate,
+                "Predicate must not be null");
+        return MiscParsers.<Itm, Seq, Itm>peek(item(predicate, errorMessage))
                 .chain(t -> optionalRun(predicate));
     }
 
     /**
-     * WHAT: Parse a run of given character, Will fail is nothing is found
+     * USAGE: Create a parser that will accept a run of a given item
+     * - Will fail if no items match the given item
+     * - items are checked with {@link Object#equals(Object)}
      */
     public static <Seq, Itm>
     Parser<Seq, Seq, Itm> run(
             Itm target,
             Supplier<String> errorMessage) {
-        return Parsers.<Itm, Seq, Itm>peek(item(target, errorMessage))
+        Objects.requireNonNull(target,
+                "Item must not be null");
+        return MiscParsers.<Itm, Seq, Itm>peek(item(target, errorMessage))
                 .chain(t -> optionalRun(target));
     }
 
     /**
-     * WHAT: Parse a run of any character from the give string, Will fail is nothing is found
+     * USAGE: Create a parser that will accept a run of any items from the give collection
+     * - Will fail if no items are found in the collection
+     * - items are checked with {@link Object#hashCode()} and {@link Object#equals(Object)}
      */
     public static <Seq, Itm>
     Parser<Seq, Seq, Itm> run(
             Collection<Itm> items,
             Supplier<String> errorMessage) {
         Set<Itm> itemSet = new HashSet<>(items);
-        return Parsers.<Itm, Seq, Itm>peek(item(itemSet::contains, errorMessage))
+        return MiscParsers.<Itm, Seq, Itm>peek(item(itemSet::contains, errorMessage))
                 .chain(t -> optionalRun(itemSet::contains));
     }
 

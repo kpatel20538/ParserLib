@@ -1,13 +1,13 @@
 package io.kpatel.parsers.parsers;
 
 import io.kpatel.parsers.Parser;
-import io.kpatel.parsers.ParserError;
 import io.kpatel.parsers.prebuilt.RepetitionParsers;
 import io.kpatel.parsers.prebuilt.TerminalParsers;
 import io.kpatel.parsers.stream.StringStream;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class RepetitionTest {
     @Test
@@ -22,7 +22,7 @@ public class RepetitionTest {
         assertEquals("Hello Hello Hello ", item);
     }
 
-    @Test()
+    @Test
     public void testZeroOrMoreFailure() {
         var stream = new StringStream("World World World ");
         Parser<String, String, Character> parser = RepetitionParsers.zeroOrMoreString(
@@ -46,14 +46,14 @@ public class RepetitionTest {
         assertEquals("Hello Hello Hello ", item);
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testOneOrMoreFailure() {
         var stream = new StringStream("World World World ");
         Parser<String, String, Character> parser = RepetitionParsers.oneOrMoreString(
                 TerminalParsers.sequence("Hello ", () -> "Can not find Hello"));
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
@@ -68,14 +68,14 @@ public class RepetitionTest {
         assertEquals("1 1 1 ", item);
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testFixedRepetitionFailure() {
         var stream = new StringStream("1 1 2 2 2 ");
         Parser<String, String, Character> parser = RepetitionParsers.repeatString(
                 TerminalParsers.sequence("1 ", () -> "Can not find 1"), 3);
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
@@ -126,13 +126,13 @@ public class RepetitionTest {
         assertEquals("1 1 ", item);
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testRangedRepetitionFailure() {
         var stream = new StringStream("1 2 2 2 2 ");
         Parser<String, String, Character> parser = RepetitionParsers.rangedRepeatString(
                 TerminalParsers.sequence("1 ", () -> "Can not find 1"), 2, 4);
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 }

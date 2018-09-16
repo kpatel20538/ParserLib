@@ -10,18 +10,31 @@ import io.kpatel.parsers.builder.TextBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
+/**
+ * INTENT: Top Level Generic Factories for Repeating/Concatenating Parsers and
+ * joining their results to a builder
+ *
+ * @see Parser
+ * @see Builder
+ */
 public final class RepetitionParsers {
+    private RepetitionParsers() {
 
+    }
 
     /**
-     * WHAT: Parse until all parsers succeeds or one parser fail and join the results to the empty case
+     * USAGE: Parse until all parsers succeeds or one parser fail and join the results with a builder.
+     * @see Builder
      */
     public static <Out, Prt, Seq, Itm>
     Parser<Out, Seq, Itm> concatenate(
             Supplier<Builder<Out, Prt>> provider,
             List<Parser<Prt, Seq, Itm>> parsers) {
+        Objects.requireNonNull(provider,
+                "Builder Supplier must not be null");
         ArrayList<Parser<Prt, Seq, Itm>> parserList =
                 new ArrayList<>(parsers);
         return (stream) -> {
@@ -38,7 +51,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse until all parsers succeeds or one parser fail and join the results to the empty string
+     * USAGE: Parse until all parsers succeeds or one parser fail and join the results to a string
      */
     public static <Seq, Itm>
     Parser<String, Seq, Itm> concatenateString(
@@ -47,7 +60,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse until all parsers succeeds or one parser fail and join the results to the empty list
+     * USAGE: Parse until all parsers succeeds or one parser fail and join the results to a list
      */
     public static <T, Seq, Itm>
     Parser<List<T>, Seq, Itm> concatenateList(
@@ -56,7 +69,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse until all parsers succeeds or one parser fail and join the results to the empty map
+     * USAGE: Parse until all parsers succeeds or one parser fail and join the results to a map
      */
     public static <K, V, Seq, Itm>
     Parser<Map<K, V>, Seq, Itm> concatenateMap(
@@ -65,12 +78,17 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse a parser until it fails and join the results to the empty case
+     * USAGE: Parse a parser until it fails and join the join the results with a builder.
+     * @see Builder
      */
     public static <Out, Prt, Seq, Itm>
     Parser<Out, Seq, Itm> zeroOrMore(
             Supplier<Builder<Out, Prt>> provider,
             Parser<Prt, Seq, Itm> parser) {
+        Objects.requireNonNull(provider,
+                "Builder Supplier must not be null");
+        Objects.requireNonNull(parser,
+                "Parser must not be null");
         return (stream) -> {
             var result = Result.success(provider.get(), stream);
             var nextResult = result;
@@ -84,7 +102,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse a parser until it fails and join the results to the empty string
+     * USAGE: Parse a parser until it fails and join the join the results with to a string.
      */
     public static <Seq, Itm>
     Parser<String, Seq, Itm> zeroOrMoreString(Parser<String, Seq, Itm> parser) {
@@ -92,7 +110,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse a parser until it fails and join the results to the empty list
+     * USAGE: Parse a parser until it fails and join the join the results with to a list.
      */
     public static <T, Seq, Itm>
     Parser<List<T>, Seq, Itm> zeroOrMoreList(Parser<T, Seq, Itm> parser) {
@@ -100,7 +118,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse a parser until it fails and join the results to the empty map
+     * USAGE: Parse a parser until it fails and join the join the results with to a map.
      */
     public static <K, V, Seq, Itm>
     Parser<Map<K, V>, Seq, Itm> zeroOrMoreMap(Parser<Map.Entry<K, V>, Seq, Itm> parser) {
@@ -108,12 +126,18 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse a parser until it fails and join the results to the empty case, requires at least one
+     * USAGE: Parse a parser until it fails and join the results with a builder.
+     * - Requires at least one
+     * @see Builder
      */
     public static <Out, Prt, Seq, Itm>
     Parser<Out, Seq, Itm> oneOrMore(
             Supplier<Builder<Out, Prt>> provider,
             Parser<Prt, Seq, Itm> parser) {
+        Objects.requireNonNull(provider,
+                "Builder Supplier must not be null");
+        Objects.requireNonNull(parser,
+                "Parser must not be null");
         return (stream) -> {
             var result = parser.parse(stream)
                     .map(part -> provider.get().append(part));
@@ -128,7 +152,8 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse a parser until it fails and join the results to the empty string, requires at least one
+     * USAGE: Parse a parser until it fails and join the results with to a string.
+     * - Requires at least one
      */
     public static <Seq, Itm>
     Parser<String, Seq, Itm> oneOrMoreString(
@@ -137,7 +162,8 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse a parser until it fails and join the results to the empty list, requires at least one
+     * USAGE: Parse a parser until it fails and join the results with to a list.
+     * - Requires at least one
      */
     public static <T, Seq, Itm>
     Parser<List<T>, Seq, Itm> oneOrMoreList(
@@ -146,7 +172,8 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse a parser until it fails and join the results to the empty map, requires at least one
+     * USAGE: Parse a parser until it fails and join the results with to a map.
+     * - Requires at least one
      */
     public static <K, V, Seq, Itm>
     Parser<Map<K, V>, Seq, Itm> oneOrMoreMap(
@@ -155,13 +182,20 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse a parser until it fails and join the results to the empty case, requires at least one
+     * USAGE: Parse with parser with a delimiter between each value and join the results with a builder.
+     * @see Builder
      */
     public static <Out, Prt, Seq, Itm>
     Parser<Out, Seq, Itm> delimited(
             Supplier<Builder<Out, Prt>> provider,
             Parser<Prt, Seq, Itm> parser,
             Parser<?, Seq, Itm> delimiter) {
+        Objects.requireNonNull(provider,
+                "Builder Supplier must not be null");
+        Objects.requireNonNull(parser,
+                "Parser must not be null");
+        Objects.requireNonNull(delimiter,
+                "Delimiter must not be null");
         var prefixedParser = AffixParsers.prefix(delimiter, parser);
         Parser<Builder<Out, Prt>, Seq, Itm> delimitedParser = stream -> {
             var result = parser.parse(stream)
@@ -174,13 +208,13 @@ public final class RepetitionParsers {
             }
             return result;
         };
-        return Parsers
+        return MiscParsers
                 .optional(delimitedParser, provider)
                 .map(Builder::toOutput);
     }
 
     /**
-     * WHAT: Parse a parser until it fails and join the results to the empty string, requires at least one
+     * USAGE: Parse with parser with a delimiter between each value and join the results with to a string.
      */
     public static <Seq, Itm>
     Parser<String, Seq, Itm> delimitedString(
@@ -190,7 +224,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parse a parser until it fails and join the results to the empty list, requires at least one
+     * USAGE: Parse with parser with a delimiter between each value and join the results with to a list.
      */
     public static <T, Seq, Itm>
     Parser<List<T>, Seq, Itm> delimitedList(
@@ -199,6 +233,9 @@ public final class RepetitionParsers {
         return delimited(ListBuilder::new, parser, delimiter);
     }
 
+    /**
+     * USAGE: Parse with parser with a delimiter between each value and join the results with to a map.
+     */
     public static <K, V, Seq, Itm>
     Parser<Map<K, V>, Seq, Itm> delimitedMap(
             Parser<Map.Entry<K, V>, Seq, Itm> parser,
@@ -207,13 +244,18 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parses an exact number of an item and joins them together
+     * USAGE: Parses an exact number of an items and join the results with a builder.
+     * @see Builder
      */
     public static <Out, Prt, Seq, Itm>
     Parser<Out, Seq, Itm> repeat(
             Supplier<Builder<Out, Prt>> provider,
             Parser<Prt, Seq, Itm> parser,
             int count) {
+        Objects.requireNonNull(provider,
+                "Builder Supplier must not be null");
+        Objects.requireNonNull(parser,
+                "Parser must not be null");
         return stream -> {
             var result = Result.success(provider.get(), stream);
 
@@ -225,7 +267,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parses an exact number of an item and joins them to a string
+     * USAGE: Parses an exact number of an items and join the results with to a string.
      */
     public static <Seq, Itm>
     Parser<String, Seq, Itm> repeatString(
@@ -235,7 +277,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parses an exact number of an item and joins them to a list
+     * USAGE: Parses an exact number of an items and join the results with to a list.
      */
     public static <T, Seq, Itm>
     Parser<List<T>, Seq, Itm> repeatList(
@@ -245,7 +287,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parses an exact number of an item and joins them to a list
+     * USAGE: Parses an exact number of an items and join the results with to a map.
      */
     public static <K, V, Seq, Itm>
     Parser<Map<K, V>, Seq, Itm> repeatMap(
@@ -256,13 +298,18 @@ public final class RepetitionParsers {
 
 
     /**
-     * WHAT: Parses a range of an item and joins them together
+     * USAGE: Parses a range of an item and join the results with a builder.
+     * @see Builder
      */
     public static <Out, Prt, Seq, Itm>
     Parser<Out, Seq, Itm> rangedRepeat(
             Supplier<Builder<Out, Prt>> provider,
             Parser<Prt, Seq, Itm> parser,
             int inclusiveLow, int inclusiveHigh) {
+        Objects.requireNonNull(provider,
+                "Builder Supplier must not be null");
+        Objects.requireNonNull(parser,
+                "Parser must not be null");
         return (stream) -> {
             var result = Result.success(provider.get(), stream);
             for (int i = 0; i < inclusiveLow && result.isSuccess(); i++) {
@@ -281,7 +328,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parses a range of an item and joins them to a string
+     * USAGE: Parses a range of an item and join the results to a string.
      */
     public static <Seq, Itm>
     Parser<String, Seq, Itm> rangedRepeatString(
@@ -293,7 +340,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parses a range of an item and joins them to a list
+     * USAGE: Parses a range of an item and join the results to a list.
      */
     public static <T, Seq, Itm>
     Parser<List<T>, Seq, Itm> rangedRepeatList(
@@ -305,7 +352,7 @@ public final class RepetitionParsers {
     }
 
     /**
-     * WHAT: Parses a range of an item and joins them to a map
+     *WHAT: Parses a range of an item and join the results to a map.
      */
     public static <K, V, Seq, Itm>
     Parser<Map<K, V>, Seq, Itm> rangedRepeatMap(
@@ -316,6 +363,9 @@ public final class RepetitionParsers {
                 inclusiveLow, inclusiveHigh);
     }
 
+    /**
+     * HELPER: Parse a part and append it to the builder, otherwise fail as normal
+     */
     private static <Out, Prt, Seq, Itm>
     Result<Builder<Out, Prt>, Seq, Itm> appendResult(
             Parser<Prt, Seq, Itm> parser,

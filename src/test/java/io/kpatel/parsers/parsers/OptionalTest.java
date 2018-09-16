@@ -5,7 +5,7 @@ import io.kpatel.parsers.prebuilt.TerminalParsers;
 import io.kpatel.parsers.stream.StringStream;
 import org.junit.Test;
 
-import static io.kpatel.parsers.prebuilt.Parsers.optional;
+import static io.kpatel.parsers.prebuilt.MiscParsers.optional;
 import static org.junit.Assert.assertEquals;
 
 public class OptionalTest {

@@ -1,107 +1,141 @@
 package io.kpatel.parsers.prebuilt;
 
 import io.kpatel.parsers.Parser;
-import io.kpatel.parsers.stream.StringStream;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
+import java.util.*;
 import java.util.function.Predicate;
 
-import static io.kpatel.parsers.prebuilt.AffixParsers.postfix;
-import static io.kpatel.parsers.prebuilt.Parsers.alternate;
-import static io.kpatel.parsers.prebuilt.Parsers.peek;
+import static io.kpatel.parsers.prebuilt.AffixParsers.suffix;
+import static io.kpatel.parsers.prebuilt.MiscParsers.*;
 import static io.kpatel.parsers.prebuilt.TerminalParsers.*;
 
 
 /**
- * WHAT: Specialized Helper Function for Parsing Strings
- * NEEDS:
- * - Specialize the Generic Helper Functions
- * - Provide String Specific Parser Composing Functions
+ * INTENT: Top Level Generic Factories for Parsers working with Strings and Character
+ * @see Parser
  */
 public final class StringParsers {
-    /**
-     * WHY: Prevent un-necessary instances of helper class
-     */
     private StringParsers() {
 
     }
 
     /**
-     * WHAT: Helper Function to parse a full string
+     * USAGE: Create a parser map accepts the end of stream and yield the NULL character.
      */
-    public static <T> T runParser(Parser<T, String, Character> parser, String sequence) {
-        return postfix(parser, eof())
-                .parse(new StringStream(sequence))
-                .getOrThrow();
-    }
-
-    public static Parser<Character, String, Character> eof() {
+    public static Parser<Character, String, Character> endOfFile() {
         return TerminalParsers.<String, Character>
                 endOfStream().map(v -> '\0');
     }
 
-    public static Parser<Character, String, Character> wordBoundary() {
-        return nonAlphanum().orElse(StringParsers::eof);
+    /**
+     * USAGE: Create a parser map accepts newlines groupings as well as end of file.
+     */
+    public static Parser<Character, String, Character> endOfLine() {
+        var lineEnd = TerminalParsers.<String, Character>item('\n', () -> "Cannot Find Newline");
+        var lineFeed = TerminalParsers.<String, Character>item('\r', () -> "Cannot Find LineFeed");
+        var optLineFeed = optional(lineFeed, () -> '\0');
+        return alternate(List.of(
+                suffix(lineEnd, optLineFeed),
+                lineFeed,
+                endOfFile()
+        ));
     }
 
+    /**
+     * USAGE: Create a parser that accepts the given full term, not just a prefix.
+     */
+    public static Parser<String, String, Character> term(String word) {
+        Objects.requireNonNull(word, "Word must not be null");
+        return suffix(sequence(
+                word, () -> String.format("Cannot Find Word '%s'", word)),
+                peek(wordBoundary()));
+    }
+
+    /**
+     * USAGE: Create a parser that accepts one of the given words
+     */
+    public static Parser<String, String, Character> keywords(
+            Collection<String> words) {
+        var wordList = new ArrayList<>(words);
+        var keywordParsers = new ArrayList<Parser<String, String, Character>>();
+
+        // Sort by Length Descending order, then Natural Order in Ascending Order
+        wordList.sort(Comparator.comparing(String::length).reversed()
+                .thenComparing(Comparator.naturalOrder()));
+
+        for (String word : wordList) {
+            keywordParsers.add(term(word));
+        }
+
+        return alternate(keywordParsers);
+    }
+
+    /**
+     * USAGE: Create a parser that accepts an Letter Characters
+     */
     public static Parser<Character, String, Character> letter() {
         return item(Character::isLetter,
                 () -> "Expected a Letter Character");
     }
 
+    /**
+     * USAGE: Create a parser that accepts an Digit Characters
+     */
     public static Parser<Character, String, Character> digit() {
         return item(Character::isDigit,
                 () -> "Expected a Digit Character");
     }
 
-    public static Parser<Character, String, Character> alphanum() {
+    /**
+     * USAGE: Create a parser that accepts an Alphanumeric Characters
+     */
+    public static Parser<Character, String, Character> alphanumeric() {
         return item(Character::isLetterOrDigit,
                 () -> "Expected a Alpha Numeric Character");
     }
 
-    public static Parser<Character, String, Character> nonAlphanum() {
-        Predicate<Character> predicate = Character::isLetterOrDigit;
-        return item(predicate.negate(),
-                () -> "Cannot Find Word Boundary");
-    }
 
-    public static Parser<String, String, Character> word(String term) {
-        return postfix(sequence(
-                term, () -> String.format("Cannot Find Word '%s'", term)),
-                peek(wordBoundary()));
-    }
-
+    /**
+     * USAGE: Create a parser that accepts a run of Whitespace Characters, (including newlines)
+     */
     public static Parser<String, String, Character> whitespace() {
         return optionalRun(Character::isSpaceChar);
     }
 
+    /**
+     * USAGE: Create a parser that accepts a run of Letter Characters
+     */
     public static Parser<String, String, Character> letters() {
         return optionalRun(Character::isLetter);
     }
 
+    /**
+     * USAGE: Create a parser that accepts a run of Digit Characters
+     */
     public static Parser<String, String, Character> digits() {
         return optionalRun(Character::isDigit);
     }
 
-    public static Parser<String, String, Character> alphanums() {
+    /**
+     * USAGE: Create a parser that accepts a run of Alphanumeric Characters
+     */
+    public static Parser<String, String, Character> alphanumerics() {
         return optionalRun(Character::isLetterOrDigit);
     }
 
-    public static Parser<String, String, Character> keywords(
-            Collection<String> words) {
-        var terms = new ArrayList<>(words);
-        var keywordParsers = new ArrayList<Parser<String, String, Character>>();
+    /**
+     * USAGE: Create the edge of word, must be used when last character matched was alphanumeric
+     */
+    private static Parser<Character, String, Character> wordBoundary() {
+        return nonAlphanumeric().orElse(StringParsers::endOfFile);
+    }
 
-        // Sort by Length Descending order, then Natural Order in Ascending Order
-        terms.sort(Comparator.comparing(String::length).reversed()
-                .thenComparing(Comparator.naturalOrder()));
-
-        for (String term : terms) {
-            keywordParsers.add(word(term));
-        }
-
-        return alternate(keywordParsers);
+    /**
+     * USAGE: Create a parser that does not accepts an Alphanumeric Characters
+     */
+    private static Parser<Character, String, Character> nonAlphanumeric() {
+        Predicate<Character> predicate = Character::isLetterOrDigit;
+        return item(predicate.negate(),
+                () -> "Cannot Find Word Boundary");
     }
 }

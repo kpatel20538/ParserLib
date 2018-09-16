@@ -1,22 +1,19 @@
 package io.kpatel.parsers.parsers;
 
-import io.kpatel.parsers.Parser;
-import io.kpatel.parsers.ParserError;
 import io.kpatel.parsers.prebuilt.TerminalParsers;
 import io.kpatel.parsers.stream.StringStream;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class TerminalTest {
     @Test
-    public void testCharacterPredicateSuccess() {
+    public void testAnyItemSuccess() {
         var stream = new StringStream("Hello World");
-        Parser<Character, String, Character> parser = TerminalParsers.item(
-                Character::isLetter,
-                () -> "Cannot Match Letter Character");
+        var parser = TerminalParsers.<String, Character>item();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -24,23 +21,20 @@ public class TerminalTest {
         assertEquals(Character.valueOf('H'), item);
     }
 
-    @Test(expected = ParserError.class)
-    public void testCharacterPredicateFailure() {
-        var stream = new StringStream("Hello World");
-        Parser<Character, String, Character> parser = TerminalParsers.item(
-                Character::isDigit,
-                () -> "Cannot Match Digit Character");
+    @Test
+    public void testAnyItemFailure() {
+        var stream = new StringStream("");
+        var parser = TerminalParsers.<String, Character>item();
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
-    public void testCharacterSuccess() {
+    public void testItemPredicateSuccess() {
         var stream = new StringStream("Hello World");
-        Parser<Character, String, Character> parser = TerminalParsers.item(
-                'H',
-                () -> "Cannot find character 'H'");
+        var parser = TerminalParsers.<String, Character>
+                item(Character::isLetter, () -> "Cannot Match Letter Character");
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -48,22 +42,43 @@ public class TerminalTest {
         assertEquals(Character.valueOf('H'), item);
     }
 
-    @Test(expected = ParserError.class)
-    public void testCharacterFailure() {
+    @Test
+    public void testItemPredicateFailure() {
         var stream = new StringStream("Hello World");
-        Parser<Character, String, Character> parser = TerminalParsers.item(
-                'W',
-                () -> "Cannot find character 'W'");
+        var parser = TerminalParsers.<String, Character>
+                item(Character::isDigit, () -> "Cannot Match Digit Character");
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
-    public void testCharacterSetSuccess() {
+    public void testItemSuccess() {
         var stream = new StringStream("Hello World");
-        Parser<Character, String, Character> parser = TerminalParsers.item(
-                Arrays.asList('e', 'H', 'l', 'o'),
+        var parser = TerminalParsers.<String, Character>
+                item('H', () -> "Cannot find character 'H'");
+        var result = parser.parse(stream);
+
+        var item = result.getOrThrow();
+
+        assertEquals(Character.valueOf('H'), item);
+    }
+
+    @Test
+    public void testItemFailure() {
+        var stream = new StringStream("Hello World");
+        var parser = TerminalParsers.<String, Character>
+                item('W', () -> "Cannot find character 'W'");
+        var result = parser.parse(stream);
+
+        assertFalse(result.isSuccess());
+    }
+
+    @Test
+    public void testItemSetSuccess() {
+        var stream = new StringStream("Hello World");
+        var parser = TerminalParsers.<String, Character>
+                item(List.of('e', 'H', 'l', 'o'),
                 () -> "Cannot find Letter from Set");
         var result = parser.parse(stream);
 
@@ -72,22 +87,22 @@ public class TerminalTest {
         assertEquals(Character.valueOf('H'), item);
     }
 
-    @Test(expected = ParserError.class)
-    public void testCharacterSetFailure() {
+    @Test
+    public void testItemSetFailure() {
         var stream = new StringStream("Hello World");
-        Parser<Character, String, Character> parser = TerminalParsers.item(
-                Arrays.asList('d', 'l', 'o', 'r', 'W'),
+        var parser = TerminalParsers.<String, Character>
+                item(List.of('d', 'l', 'o', 'r', 'W'),
                 () -> "Cannot find Letter from Set");
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
-    public void testTerminalSequenceSuccess() {
+    public void testSequenceSuccess() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = TerminalParsers.sequence(
-                "Hello", () -> "Cannot find Hello");
+        var parser = TerminalParsers.<String, Character>
+                sequence("Hello", () -> "Cannot find Hello");
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -95,20 +110,21 @@ public class TerminalTest {
         assertEquals("Hello", item);
     }
 
-    @Test(expected = ParserError.class)
-    public void testTerminalSequenceFailure() {
+    @Test
+    public void testSequenceFailure() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = TerminalParsers.sequence(
-                "Helper", () -> "Cannot find Helper");
+        var parser = TerminalParsers.<String, Character>
+                sequence("Helper", () -> "Cannot find Helper");
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
     public void testOptionalRunPredicateSuccess() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = TerminalParsers.optionalRun(Character::isLetter);
+        var parser = TerminalParsers.<String, Character>
+                optionalRun(Character::isLetter);
         var result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -119,7 +135,8 @@ public class TerminalTest {
     @Test
     public void testOptionalRunPredicateFailure() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = TerminalParsers.optionalRun(Character::isDigit);
+        var parser = TerminalParsers.<String, Character>
+                optionalRun(Character::isDigit);
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -128,9 +145,10 @@ public class TerminalTest {
     }
 
     @Test
-    public void testOptionalRunCharacterSuccess() {
+    public void testOptionalRunItemSuccess() {
         var stream = new StringStream("HHHHH WWWWW");
-        Parser<String, String, Character> parser = TerminalParsers.optionalRun('H');
+        var parser = TerminalParsers.<String, Character>
+                optionalRun('H');
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -139,9 +157,10 @@ public class TerminalTest {
     }
 
     @Test
-    public void testOptionalRunCharacterFailure() {
+    public void testOptionalRunItemFailure() {
         var stream = new StringStream("HHHHH WWWWW");
-        Parser<String, String, Character> parser = TerminalParsers.optionalRun('W');
+        var parser = TerminalParsers.<String, Character>
+                optionalRun('W');
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -150,10 +169,10 @@ public class TerminalTest {
     }
 
     @Test
-    public void testOptionalRunCharacterSetSuccess() {
+    public void testOptionalRunItemSetSuccess() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = TerminalParsers.optionalRun(
-                Arrays.asList('e', 'H', 'l', 'o'));
+        var parser = TerminalParsers.<String, Character>
+                optionalRun(List.of('e', 'H', 'l', 'o'));
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -162,10 +181,10 @@ public class TerminalTest {
     }
 
     @Test
-    public void testOptionalRunCharacterSetFailure() {
+    public void testOptionalRunItemSetFailure() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = TerminalParsers.optionalRun(
-                Arrays.asList('d', 'l', 'o', 'r', 'W'));
+        var parser = TerminalParsers.<String, Character>
+                optionalRun(List.of('d', 'l', 'o', 'r', 'W'));
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -176,8 +195,8 @@ public class TerminalTest {
     @Test
     public void testRunPredicateSuccess() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = TerminalParsers.run(
-                Character::isLetter, () -> "Cannot Find Run of Letters");
+        var parser = TerminalParsers.<String, Character>
+                run(Character::isLetter, () -> "Cannot Find Run of Letters");
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -185,21 +204,21 @@ public class TerminalTest {
         assertEquals("Hello", item);
     }
 
-    @Test(expected = ParserError.class)
+    @Test
     public void testRunPredicateFailure() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = TerminalParsers.run(
-                Character::isDigit, () -> "Cannot Find Run of Digits");
+        var parser = TerminalParsers.<String, Character>
+                run(Character::isDigit, () -> "Cannot Find Run of Digits");
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
     public void testRunCharacterSuccess() {
         var stream = new StringStream("HHHHH WWWWW");
-        Parser<String, String, Character> parser = TerminalParsers.run(
-                'H', () -> "Cannot Find Run of Character W");
+        var parser = TerminalParsers.<String, Character>
+                run('H', () -> "Cannot Find Run of Character W");
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -207,21 +226,21 @@ public class TerminalTest {
         assertEquals("HHHHH", item);
     }
 
-    @Test(expected = ParserError.class)
-    public void testRunCharacterFailure() {
+    @Test
+    public void testRunItemFailure() {
         var stream = new StringStream("HHHHH WWWWW");
-        Parser<String, String, Character> parser = TerminalParsers.run(
-                'W', () -> "Cannot Find Run of Character W");
+        var parser = TerminalParsers.<String, Character>
+                run('W', () -> "Cannot Find Run of Character W");
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 
     @Test
-    public void testRunCharacterSetSuccess() {
+    public void testRunItemSetSuccess() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = TerminalParsers.run(
-                Arrays.asList('e', 'H', 'l', 'o'),
+        var parser = TerminalParsers.<String, Character>
+                run(List.of('e', 'H', 'l', 'o'),
                 () -> "Cannot Find Run of Character Set");
         var result = parser.parse(stream);
 
@@ -230,14 +249,14 @@ public class TerminalTest {
         assertEquals("Hello", item);
     }
 
-    @Test(expected = ParserError.class)
-    public void testRunCharacterSetFailure() {
+    @Test
+    public void testRunItemSetFailure() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = TerminalParsers.run(
-                Arrays.asList('d', 'l', 'o', 'r', 'W'),
+        var parser = TerminalParsers.<String, Character>
+                run(List.of('d', 'l', 'o', 'r', 'W'),
                 () -> "Cannot Find Run of Character Set");
         var result = parser.parse(stream);
 
-        result.getOrThrow();
+        assertFalse(result.isSuccess());
     }
 }

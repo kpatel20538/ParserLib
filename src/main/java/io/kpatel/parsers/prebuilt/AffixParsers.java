@@ -2,44 +2,62 @@ package io.kpatel.parsers.prebuilt;
 
 import io.kpatel.parsers.Parser;
 
+import java.util.Objects;
+
+import static io.kpatel.parsers.prebuilt.MiscParsers.pipe;
+
+/**
+ * INTENT: Top Level Generic Factories for Parsers handling Prefixes, and Suffixes
+ *
+ * @see Parser
+ */
 public final class AffixParsers {
     private AffixParsers() {
 
     }
 
     /**
-     * WHAT: Parse an item with a prefix and omit the prefix
+     * USAGE: Create a parser that will accept a prefix and a root, and yield the root
      */
     public static <T, Seq, Itm>
     Parser<T, Seq, Itm> prefix(
             Parser<?, Seq, Itm> before,
             Parser<T, Seq, Itm> parser) {
-        return Parsers.pipe(before, parser,
-                (pre, root) -> root);
+        Objects.requireNonNull(before,
+                "Before Parser must not be null");
+        Objects.requireNonNull(parser,
+                "Parser must not be null");
+        return pipe(before, parser, (pre, root) -> root);
     }
 
     /**
-     * WHAT: Parse an item with a postfix and omit the postfix
+     * USAGE: Create a parser that will accept a root and a suffix, and yield the root
      */
     public static <T, Seq, Itm>
-    Parser<T, Seq, Itm> postfix(
+    Parser<T, Seq, Itm> suffix(
             Parser<T, Seq, Itm> parser,
             Parser<?, Seq, Itm> after) {
-        return Parsers.pipe(parser, after,
-                (root, post) -> root);
+        Objects.requireNonNull(parser,
+                "Before Parser must not be null");
+        Objects.requireNonNull(after,
+                "Before Parser must not be null");
+        return pipe(parser, after, (root, post) -> root);
     }
 
     /**
-     * WHAT: Parse an item with a prefix and a postfix and omit both the prefix and the postfix
+     * USAGE: Create a parser that will accept a prefix, a root and a suffix, and yield the root
      */
     public static <T, Seq, Itm>
     Parser<T, Seq, Itm> between(
             Parser<?, Seq, Itm> before,
             Parser<T, Seq, Itm> parser,
             Parser<?, Seq, Itm> after) {
-        return before.chain(
-                pre -> parser.chain(
-                        item -> after.map(
-                                post -> item)));
+        Objects.requireNonNull(before,
+                "Before Parser must not be null");
+        Objects.requireNonNull(parser,
+                "Before Parser must not be null");
+        Objects.requireNonNull(after,
+                "Before Parser must not be null");
+        return prefix(before, suffix(parser, after));
     }
 }

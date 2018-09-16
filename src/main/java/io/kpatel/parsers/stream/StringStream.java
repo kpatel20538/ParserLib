@@ -1,10 +1,16 @@
 package io.kpatel.parsers.stream;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
- * WHY: Specialize ParserStream for Stream
+ * WHAT: Specialized ParserStream for Strings
+ * NOTE:
+ * - This Implementation is keeps track of Line and Col numbers
+ * - This Implementation is Strictly Immutable.
+ * @see ParserStream
  */
 public final class StringStream implements ParserStream<String, Character> {
     private final String stream;
@@ -13,7 +19,8 @@ public final class StringStream implements ParserStream<String, Character> {
     private final int columnNumber;
 
     public StringStream(String stream) {
-        this.stream = stream;
+        this.stream = Objects.requireNonNull(stream,
+                "String for Stream must not be null");
         this.position = 0;
         this.lineNumber = 1;
         this.columnNumber = 0;
@@ -101,8 +108,9 @@ public final class StringStream implements ParserStream<String, Character> {
         return columnNumber;
     }
 
-    public String getErrorHeader() {
-        return String.format("(Line: %d, Col: %d)",
-                getLineNumber(), getColumnNumber());
+    public Supplier<String> getErrorContext() {
+        final var lineNo = getLineNumber();
+        final var colNo = getLineNumber();
+        return () -> String.format("(Line: %d, Col: %d)", lineNo, colNo);
     }
 }
