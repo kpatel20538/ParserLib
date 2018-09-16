@@ -10,7 +10,7 @@ package io.kpatel.parsers;
  * CONSIDER:
  * - Subclassing Exception and using Checked Exceptions
  */
-public class ParserError extends RuntimeException {
+public final class ParserError extends RuntimeException {
     public ParserError(String errorMessage) {
         super(errorMessage);
     }

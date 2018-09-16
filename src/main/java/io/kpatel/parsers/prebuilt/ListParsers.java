@@ -1,11 +1,12 @@
-package io.kpatel.parsers.list;
+package io.kpatel.parsers.prebuilt;
 
 import io.kpatel.parsers.Parser;
+import io.kpatel.parsers.stream.ListStream;
 
 import java.util.List;
 
-import static io.kpatel.parsers.Parsers.endOfStream;
-import static io.kpatel.parsers.Parsers.postfix;
+import static io.kpatel.parsers.prebuilt.AffixParsers.postfix;
+import static io.kpatel.parsers.prebuilt.TerminalParsers.endOfStream;
 
 /**
  * WHAT: Specialized Helper Function for Parsing List of Tokens

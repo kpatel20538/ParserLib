@@ -1,7 +1,4 @@
-package io.kpatel.parsers.list;
-
-import io.kpatel.parsers.ParserStream;
-import io.kpatel.parsers.SequenceHolder;
+package io.kpatel.parsers.stream;
 
 import java.util.Collections;
 import java.util.List;
@@ -11,7 +8,7 @@ import java.util.function.Predicate;
 /**
  * WHY: Specialize ParserStream for Stream
  */
-public class ListStream<Tkn> implements ParserStream<List<Tkn>, Tkn> {
+public final class ListStream<Tkn> implements ParserStream<List<Tkn>, Tkn> {
     private final List<Tkn> stream;
     private final int position;
 
@@ -48,7 +45,8 @@ public class ListStream<Tkn> implements ParserStream<List<Tkn>, Tkn> {
     public SequenceHolder<List<Tkn>> getLeadingRun(Predicate<Tkn> predicate) {
         if (position < stream.size()) {
             int endPosition = position;
-            while (endPosition < stream.size() && predicate.test(stream.get(endPosition)))
+            while (endPosition < stream.size()
+                    && predicate.test(stream.get(endPosition)))
                 endPosition++;
             return holdSequence(stream.subList(position, endPosition));
         }
@@ -57,7 +55,9 @@ public class ListStream<Tkn> implements ParserStream<List<Tkn>, Tkn> {
 
     @Override
     public SequenceHolder<List<Tkn>> holdSequence(List<Tkn> sequence) {
-        return new SequenceHolder<>(sequence.size(), Collections.unmodifiableList(sequence));
+        return new SequenceHolder<>(
+                sequence.size(),
+                Collections.unmodifiableList(sequence));
     }
 
     @Override

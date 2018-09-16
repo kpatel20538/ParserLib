@@ -1,7 +1,4 @@
-package io.kpatel.parsers.string;
-
-import io.kpatel.parsers.ParserStream;
-import io.kpatel.parsers.SequenceHolder;
+package io.kpatel.parsers.stream;
 
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -9,7 +6,7 @@ import java.util.function.Predicate;
 /**
  * WHY: Specialize ParserStream for Stream
  */
-public class StringStream implements ParserStream<String, Character> {
+public final class StringStream implements ParserStream<String, Character> {
     private final String stream;
     private final int position;
     private final int lineNumber;
@@ -22,7 +19,9 @@ public class StringStream implements ParserStream<String, Character> {
         this.columnNumber = 0;
     }
 
-    private StringStream(String stream, int position, int lineNumber, int columnNumber) {
+    private StringStream(
+            String stream, int position,
+            int lineNumber, int columnNumber) {
         this.stream = stream;
         this.position = position;
         this.lineNumber = lineNumber;
@@ -53,7 +52,8 @@ public class StringStream implements ParserStream<String, Character> {
     public SequenceHolder<String> getLeadingRun(Predicate<Character> predicate) {
         if (position < stream.length()) {
             int endPosition = position;
-            while (endPosition < stream.length() && predicate.test(stream.charAt(endPosition)))
+            while (endPosition < stream.length()
+                    && predicate.test(stream.charAt(endPosition)))
                 endPosition++;
 
             return holdSequence(stream.substring(position, endPosition));
@@ -102,6 +102,7 @@ public class StringStream implements ParserStream<String, Character> {
     }
 
     public String getErrorHeader() {
-        return String.format("(Line: %d, Col: %d)", getLineNumber(), getColumnNumber());
+        return String.format("(Line: %d, Col: %d)",
+                getLineNumber(), getColumnNumber());
     }
 }

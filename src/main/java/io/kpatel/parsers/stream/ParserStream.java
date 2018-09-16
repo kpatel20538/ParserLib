@@ -1,4 +1,4 @@
-package io.kpatel.parsers;
+package io.kpatel.parsers.stream;
 
 import java.util.Optional;
 import java.util.function.Predicate;

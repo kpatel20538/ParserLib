@@ -1,6 +1,6 @@
 package io.kpatel.parsers;
 
-import io.kpatel.parsers.string.StringStream;
+import io.kpatel.parsers.stream.StringStream;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

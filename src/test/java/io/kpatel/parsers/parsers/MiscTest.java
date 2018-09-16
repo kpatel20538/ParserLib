@@ -2,31 +2,33 @@ package io.kpatel.parsers.parsers;
 
 import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.ParserError;
-import io.kpatel.parsers.string.StringStream;
+import io.kpatel.parsers.prebuilt.AffixParsers;
+import io.kpatel.parsers.prebuilt.TerminalParsers;
+import io.kpatel.parsers.stream.StringStream;
 import org.junit.Test;
 
 import java.util.Map;
 
-import static io.kpatel.parsers.Parsers.*;
+import static io.kpatel.parsers.prebuilt.Parsers.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 
 public class MiscTest {
     @Test
     public void testEndOfStreamSuccess() {
         var stream = new StringStream("");
-        Parser<Void, String, Character> parser = endOfStream();
+        Parser<Object, String, Character> parser = TerminalParsers.endOfStream();
         var result = parser.parse(stream);
 
-        Void item = result.getOrThrow();
+        Object item = result.getOrThrow();
 
-        assertNull(item);
+        assertNotNull(item);
     }
 
     @Test(expected = ParserError.class)
     public void testEndOfStreamFailure() {
         var stream = new StringStream("Hello World");
-        Parser<Void, String, Character> parser = endOfStream();
+        Parser<Object, String, Character> parser = TerminalParsers.endOfStream();
         var result = parser.parse(stream);
 
         result.getOrThrow();
@@ -35,9 +37,11 @@ public class MiscTest {
     @Test
     public void testPeekSuccess() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = prefix(
-                peek(sequence("Hello", () -> "Cannot Find Hello")),
-                sequence("Hello World", () -> "Cannot Find Hello World"));
+        Parser<String, String, Character> parser = AffixParsers.prefix(
+                peek(TerminalParsers.sequence("Hello",
+                        () -> "Cannot Find Hello")),
+                TerminalParsers.sequence("Hello World",
+                        () -> "Cannot Find Hello World"));
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -48,9 +52,11 @@ public class MiscTest {
     @Test(expected = ParserError.class)
     public void testPeekFailure() {
         var stream = new StringStream("Hello World");
-        Parser<String, String, Character> parser = prefix(
-                peek(sequence("World", () -> "Cannot Find World")),
-                sequence("Hello World", () -> "Cannot Find Hello World"));
+        Parser<String, String, Character> parser = AffixParsers.prefix(
+                peek(TerminalParsers.sequence("World",
+                        () -> "Cannot Find World")),
+                TerminalParsers.sequence("Hello World",
+                        () -> "Cannot Find Hello World"));
         var result = parser.parse(stream);
 
         result.getOrThrow();
@@ -60,8 +66,10 @@ public class MiscTest {
     public void testExceptionSuccess() {
         var stream = new StringStream("Hello World");
         Parser<String, String, Character> parser = exception(
-                sequence("Hello", () -> "Cannot Find Hello"),
-                str -> str.charAt(0) == 'W');
+                TerminalParsers.sequence("Hello",
+                        () -> "Cannot Find Hello"),
+                str -> str.charAt(0) == 'W',
+                () -> "Found a W Character");
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -73,8 +81,10 @@ public class MiscTest {
     public void testExceptionFailureBase() {
         var stream = new StringStream("Hello World");
         Parser<String, String, Character> parser = exception(
-                sequence("World", () -> "Cannot Find World"),
-                str -> str.charAt(0) == 'W');
+                TerminalParsers.sequence("World",
+                        () -> "Cannot Find World"),
+                str -> str.charAt(0) == 'W',
+                () -> "Found a W Character");
         var result = parser.parse(stream);
 
         result.getOrThrow();
@@ -84,8 +94,10 @@ public class MiscTest {
     public void testExceptionFailureExcept() {
         var stream = new StringStream("Hello World");
         Parser<String, String, Character> parser = exception(
-                sequence("Hello", () -> "Cannot Find Hello"),
-                str -> str.charAt(0) == 'H');
+                TerminalParsers.sequence("Hello",
+                        () -> "Cannot Find Hello"),
+                str -> str.charAt(0) == 'H',
+                () -> "Found a H Character");
         var result = parser.parse(stream);
 
         result.getOrThrow();
@@ -95,8 +107,10 @@ public class MiscTest {
     public void testPipeSuccess() {
         var stream = new StringStream("Hello World");
         Parser<String, String, Character> parser = pipe(
-                sequence("Hello ", () -> "Cannot Find Hello"),
-                sequence("World", () -> "Cannot Find World"),
+                TerminalParsers.sequence("Hello ",
+                        () -> "Cannot Find Hello"),
+                TerminalParsers.sequence("World",
+                        () -> "Cannot Find World"),
                 String::concat);
         var result = parser.parse(stream);
 
@@ -109,8 +123,10 @@ public class MiscTest {
     public void testPipeFailureLeft() {
         var stream = new StringStream("Alpha World");
         Parser<String, String, Character> parser = pipe(
-                sequence("Hello ", () -> "Cannot Find Hello"),
-                sequence("World", () -> "Cannot Find World"),
+                TerminalParsers.sequence("Hello ",
+                        () -> "Cannot Find Hello"),
+                TerminalParsers.sequence("World",
+                        () -> "Cannot Find World"),
                 String::concat);
         var result = parser.parse(stream);
 
@@ -121,8 +137,10 @@ public class MiscTest {
     public void testPipeFailureRight() {
         var stream = new StringStream("Hello Alpha");
         Parser<String, String, Character> parser = pipe(
-                sequence("Hello ", () -> "Cannot Find Hello"),
-                sequence("World", () -> "Cannot Find World"),
+                TerminalParsers.sequence("Hello ",
+                        () -> "Cannot Find Hello"),
+                TerminalParsers.sequence("World",
+                        () -> "Cannot Find World"),
                 String::concat);
         var result = parser.parse(stream);
 
@@ -133,8 +151,10 @@ public class MiscTest {
     public void testEntrySuccess() {
         var stream = new StringStream("Hello World");
         Parser<Map.Entry<String, String>, String, Character> parser = entry(
-                sequence("Hello ", () -> "Cannot Find Hello"),
-                sequence("World", () -> "Cannot Find World"));
+                TerminalParsers.sequence("Hello ",
+                        () -> "Cannot Find Hello"),
+                TerminalParsers.sequence("World",
+                        () -> "Cannot Find World"));
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -146,8 +166,10 @@ public class MiscTest {
     public void testEntryFailureKey() {
         var stream = new StringStream("Alpha World");
         Parser<Map.Entry<String, String>, String, Character> parser = entry(
-                sequence("Hello ", () -> "Cannot Find Hello"),
-                sequence("World", () -> "Cannot Find World"));
+                TerminalParsers.sequence("Hello ",
+                        () -> "Cannot Find Hello"),
+                TerminalParsers.sequence("World",
+                        () -> "Cannot Find World"));
         var result = parser.parse(stream);
 
         result.getOrThrow();
@@ -157,8 +179,10 @@ public class MiscTest {
     public void tesEntryFailureValue() {
         var stream = new StringStream("Hello Alpha");
         Parser<Map.Entry<String, String>, String, Character> parser = entry(
-                sequence("Hello ", () -> "Cannot Find Hello"),
-                sequence("World", () -> "Cannot Find World"));
+                TerminalParsers.sequence("Hello ",
+                        () -> "Cannot Find Hello"),
+                TerminalParsers.sequence("World",
+                        () -> "Cannot Find World"));
         var result = parser.parse(stream);
 
         result.getOrThrow();

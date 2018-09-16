@@ -1,6 +1,6 @@
-package io.kpatel.parsers;
+package io.kpatel.parsers.stream;
 
-public class SequenceHolder<Seq> {
+public final class SequenceHolder<Seq> {
     private final int length;
     private final Seq sequence;
 

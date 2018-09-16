@@ -1,5 +1,8 @@
 package io.kpatel.parsers;
 
+import io.kpatel.parsers.stream.ParserStream;
+
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -23,6 +26,7 @@ public abstract class Result<T, Seq, Itm> {
      * WHY: Result must either a Success Instance, or a Failure Instance
      */
     Result() {
+
     }
 
     /**
@@ -87,7 +91,13 @@ public abstract class Result<T, Seq, Itm> {
      * WHAT: Visitor Pattern seeking the Success Case
      * WHY: Indicates Success Case
      */
-    public abstract boolean isSuccess();
+
+
+    public abstract Optional<T> get();
+
+    public final boolean isSuccess() {
+        return get().isPresent();
+    }
 }
 
 
@@ -176,8 +186,8 @@ final class Success<T, Seq, Itm> extends Result<T, Seq, Itm> {
      * @see Result#isSuccess
      * @see Failure#isSuccess
      */
-    public boolean isSuccess() {
-        return true;
+    public Optional<T> get() {
+        return Optional.of(getResult());
     }
 }
 
@@ -266,7 +276,7 @@ final class Failure<T, Seq, Itm> extends Result<T, Seq, Itm> {
      * @see Result#isSuccess
      * @see Failure#isSuccess
      */
-    public boolean isSuccess() {
-        return false;
+    public Optional<T> get() {
+        return Optional.empty();
     }
 }

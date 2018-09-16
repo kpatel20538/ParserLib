@@ -1,4 +1,4 @@
-package io.kpatel.parsers.list;
+package io.kpatel.parsers.stream;
 
 import org.junit.Test;
 

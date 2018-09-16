@@ -2,13 +2,13 @@ package io.kpatel.parsers.parsers;
 
 import io.kpatel.parsers.Parser;
 import io.kpatel.parsers.ParserError;
-import io.kpatel.parsers.string.StringStream;
+import io.kpatel.parsers.stream.StringStream;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static io.kpatel.parsers.Parsers.alternate;
-import static io.kpatel.parsers.Parsers.sequence;
+import static io.kpatel.parsers.prebuilt.Parsers.alternate;
+import static io.kpatel.parsers.prebuilt.TerminalParsers.sequence;
 import static org.junit.Assert.assertEquals;
 
 public class AlternateTest {

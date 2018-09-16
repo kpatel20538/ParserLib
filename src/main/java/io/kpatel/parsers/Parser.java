@@ -1,5 +1,7 @@
 package io.kpatel.parsers;
 
+import io.kpatel.parsers.stream.ParserStream;
+
 import java.util.function.Function;
 import java.util.function.Supplier;
 
