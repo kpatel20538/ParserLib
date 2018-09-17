@@ -5,6 +5,7 @@ group 'com.github.kpatel20538'
 version '1.0.0'
 
 sourceCompatibility = 1.10
+targetCompatibility = 1.10
 
 repositories {
     mavenCentral()
