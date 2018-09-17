@@ -1,22 +1,41 @@
 package io.kpatel.parsers.parsers;
 
 import io.kpatel.parsers.Parser;
-import io.kpatel.parsers.prebuilt.AffixParsers;
-import io.kpatel.parsers.prebuilt.TerminalParsers;
 import io.kpatel.parsers.stream.StringStream;
 import org.junit.Test;
 
+import java.util.function.Supplier;
+
+import static io.kpatel.parsers.prebuilt.AffixParsers.*;
+import static io.kpatel.parsers.prebuilt.StringParsers.letter;
+import static io.kpatel.parsers.prebuilt.TerminalParsers.sequence;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 public class AffixTest {
+    public Supplier<Parser<Character, String, Character>> prefixParser() {
+        return prefix(
+                sequence("int ", () -> "Cannot Find Identifier"),
+                letter());
+    }
+
+    public Supplier<Parser<Character, String, Character>> suffixParser() {
+        return suffix(
+                letter(),
+                sequence(";", () -> "Cannot Find Terminator"));
+    }
+
+    public Supplier<Parser<Character, String, Character>> betweenParser() {
+        return between(
+                sequence("int ", () -> "Cannot Find Identifier"),
+                letter(),
+                sequence(";", () -> "Cannot Find Terminator"));
+    }
+
     @Test
     public void testPrefixSuccess() {
         var stream = new StringStream("int x");
-        Parser<Character, String, Character> parser = AffixParsers.prefix(
-                TerminalParsers.sequence("int ", () -> "Cannot Find Identifier"),
-                TerminalParsers.item(Character::isLetter, () -> "Cannot Find Letter"));
-        var result = parser.parse(stream);
+        var result = prefixParser().get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -26,10 +45,7 @@ public class AffixTest {
     @Test
     public void testPrefixFailurePrefix() {
         var stream = new StringStream("float x");
-        Parser<Character, String, Character> parser = AffixParsers.prefix(
-                TerminalParsers.sequence("int ", () -> "Cannot Find Identifier"),
-                TerminalParsers.item(Character::isLetter, () -> "Cannot Find Letter"));
-        var result = parser.parse(stream);
+        var result = prefixParser().get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
@@ -37,21 +53,15 @@ public class AffixTest {
     @Test
     public void testPrefixFailureRoot() {
         var stream = new StringStream("int 1");
-        Parser<Character, String, Character> parser = AffixParsers.prefix(
-                TerminalParsers.sequence("int ", () -> "Cannot Find Identifier"),
-                TerminalParsers.item(Character::isLetter, () -> "Cannot Find Letter"));
-        var result = parser.parse(stream);
+        var result = prefixParser().get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
 
     @Test
-    public void testPostfixSuccess() {
+    public void testSuffixSuccess() {
         var stream = new StringStream("x;");
-        Parser<Character, String, Character> parser = AffixParsers.suffix(
-                TerminalParsers.item(Character::isLetter, () -> "Cannot Find Letter"),
-                TerminalParsers.sequence(";", () -> "Cannot Find Terminator"));
-        var result = parser.parse(stream);
+        var result = suffixParser().get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -59,23 +69,17 @@ public class AffixTest {
     }
 
     @Test
-    public void testPostfixFailurePostfix() {
+    public void testSuffixFailurePostfix() {
         var stream = new StringStream("x,");
-        Parser<Character, String, Character> parser = AffixParsers.suffix(
-                TerminalParsers.item(Character::isLetter, () -> "Cannot Find Letter"),
-                TerminalParsers.sequence(";", () -> "Cannot Find Terminator"));
-        var result = parser.parse(stream);
+        var result = suffixParser().get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
 
     @Test
-    public void testPostfixFailureRoot() {
+    public void testSuffixFailureRoot() {
         var stream = new StringStream("1;");
-        Parser<Character, String, Character> parser = AffixParsers.suffix(
-                TerminalParsers.item(Character::isLetter, () -> "Cannot Find Letter"),
-                TerminalParsers.sequence(";", () -> "Cannot Find Terminator"));
-        var result = parser.parse(stream);
+        var result = suffixParser().get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
@@ -83,11 +87,7 @@ public class AffixTest {
     @Test
     public void testBetweenSuccess() {
         var stream = new StringStream("int x;");
-        Parser<Character, String, Character> parser = AffixParsers.between(
-                TerminalParsers.sequence("int ", () -> "Cannot Find Identifier"),
-                TerminalParsers.item(Character::isLetter, () -> "Cannot Find Letter"),
-                TerminalParsers.sequence(";", () -> "Cannot Find Terminator"));
-        var result = parser.parse(stream);
+        var result = betweenParser().get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -97,11 +97,7 @@ public class AffixTest {
     @Test
     public void testBetweenFailurePrefix() {
         var stream = new StringStream("float x;");
-        Parser<Character, String, Character> parser = AffixParsers.between(
-                TerminalParsers.sequence("int ", () -> "Cannot Find Identifier"),
-                TerminalParsers.item(Character::isLetter, () -> "Cannot Find Letter"),
-                TerminalParsers.sequence(";", () -> "Cannot Find Terminator"));
-        var result = parser.parse(stream);
+        var result = betweenParser().get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
@@ -109,11 +105,7 @@ public class AffixTest {
     @Test
     public void testBetweenFailurePostfix() {
         var stream = new StringStream("int x,");
-        Parser<Character, String, Character> parser = AffixParsers.between(
-                TerminalParsers.sequence("int ", () -> "Cannot Find Identifier"),
-                TerminalParsers.item(Character::isLetter, () -> "Cannot Find Letter"),
-                TerminalParsers.sequence(";", () -> "Cannot Find Terminator"));
-        var result = parser.parse(stream);
+        var result = betweenParser().get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
@@ -121,11 +113,7 @@ public class AffixTest {
     @Test
     public void testBetweenFailureRoot() {
         var stream = new StringStream("int 1;");
-        Parser<Character, String, Character> parser = AffixParsers.between(
-                TerminalParsers.sequence("int ", () -> "Cannot Find Identifier"),
-                TerminalParsers.item(Character::isLetter, () -> "Cannot Find Letter"),
-                TerminalParsers.sequence(";", () -> "Cannot Find Terminator"));
-        var result = parser.parse(stream);
+        var result = betweenParser().get().parse(stream);
 
         assertFalse(result.isSuccess());
     }

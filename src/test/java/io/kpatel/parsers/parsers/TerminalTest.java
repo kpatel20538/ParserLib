@@ -13,7 +13,7 @@ public class TerminalTest {
     @Test
     public void testAnyItemSuccess() {
         var stream = new StringStream("Hello World");
-        var parser = TerminalParsers.<String, Character>item();
+        var parser = TerminalParsers.<String, Character>item().get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -24,7 +24,7 @@ public class TerminalTest {
     @Test
     public void testAnyItemFailure() {
         var stream = new StringStream("");
-        var parser = TerminalParsers.<String, Character>item();
+        var parser = TerminalParsers.<String, Character>item().get();
         var result = parser.parse(stream);
 
         assertFalse(result.isSuccess());
@@ -34,7 +34,7 @@ public class TerminalTest {
     public void testItemPredicateSuccess() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                item(Character::isLetter, () -> "Cannot Match Letter Character");
+                item(Character::isLetter, () -> "Cannot Match Letter Character").get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -46,7 +46,7 @@ public class TerminalTest {
     public void testItemPredicateFailure() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                item(Character::isDigit, () -> "Cannot Match Digit Character");
+                item(Character::isDigit, () -> "Cannot Match Digit Character").get();
         var result = parser.parse(stream);
 
         assertFalse(result.isSuccess());
@@ -56,7 +56,7 @@ public class TerminalTest {
     public void testItemSuccess() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                item('H', () -> "Cannot find character 'H'");
+                item('H', () -> "Cannot find character 'H'").get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -68,7 +68,7 @@ public class TerminalTest {
     public void testItemFailure() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                item('W', () -> "Cannot find character 'W'");
+                item('W', () -> "Cannot find character 'W'").get();
         var result = parser.parse(stream);
 
         assertFalse(result.isSuccess());
@@ -79,7 +79,7 @@ public class TerminalTest {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
                 item(List.of('e', 'H', 'l', 'o'),
-                () -> "Cannot find Letter from Set");
+                () -> "Cannot find Letter from Set").get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -92,7 +92,7 @@ public class TerminalTest {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
                 item(List.of('d', 'l', 'o', 'r', 'W'),
-                () -> "Cannot find Letter from Set");
+                () -> "Cannot find Letter from Set").get();
         var result = parser.parse(stream);
 
         assertFalse(result.isSuccess());
@@ -102,7 +102,7 @@ public class TerminalTest {
     public void testSequenceSuccess() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                sequence("Hello", () -> "Cannot find Hello");
+                sequence("Hello", () -> "Cannot find Hello").get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -114,7 +114,7 @@ public class TerminalTest {
     public void testSequenceFailure() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                sequence("Helper", () -> "Cannot find Helper");
+                sequence("Helper", () -> "Cannot find Helper").get();
         var result = parser.parse(stream);
 
         assertFalse(result.isSuccess());
@@ -124,7 +124,7 @@ public class TerminalTest {
     public void testOptionalRunPredicateSuccess() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                optionalRun(Character::isLetter);
+                optionalRun(Character::isLetter).get();
         var result = parser.parse(stream);
 
         String item = result.getOrThrow();
@@ -136,7 +136,7 @@ public class TerminalTest {
     public void testOptionalRunPredicateFailure() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                optionalRun(Character::isDigit);
+                optionalRun(Character::isDigit).get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -148,7 +148,7 @@ public class TerminalTest {
     public void testOptionalRunItemSuccess() {
         var stream = new StringStream("HHHHH WWWWW");
         var parser = TerminalParsers.<String, Character>
-                optionalRun('H');
+                optionalRun('H').get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -160,7 +160,7 @@ public class TerminalTest {
     public void testOptionalRunItemFailure() {
         var stream = new StringStream("HHHHH WWWWW");
         var parser = TerminalParsers.<String, Character>
-                optionalRun('W');
+                optionalRun('W').get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -172,7 +172,7 @@ public class TerminalTest {
     public void testOptionalRunItemSetSuccess() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                optionalRun(List.of('e', 'H', 'l', 'o'));
+                optionalRun(List.of('e', 'H', 'l', 'o')).get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -184,7 +184,7 @@ public class TerminalTest {
     public void testOptionalRunItemSetFailure() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                optionalRun(List.of('d', 'l', 'o', 'r', 'W'));
+                optionalRun(List.of('d', 'l', 'o', 'r', 'W')).get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -196,7 +196,7 @@ public class TerminalTest {
     public void testRunPredicateSuccess() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                run(Character::isLetter, () -> "Cannot Find Run of Letters");
+                run(Character::isLetter, () -> "Cannot Find Run of Letters").get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -208,7 +208,7 @@ public class TerminalTest {
     public void testRunPredicateFailure() {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
-                run(Character::isDigit, () -> "Cannot Find Run of Digits");
+                run(Character::isDigit, () -> "Cannot Find Run of Digits").get();
         var result = parser.parse(stream);
 
         assertFalse(result.isSuccess());
@@ -218,7 +218,7 @@ public class TerminalTest {
     public void testRunCharacterSuccess() {
         var stream = new StringStream("HHHHH WWWWW");
         var parser = TerminalParsers.<String, Character>
-                run('H', () -> "Cannot Find Run of Character W");
+                run('H', () -> "Cannot Find Run of Character W").get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -230,7 +230,7 @@ public class TerminalTest {
     public void testRunItemFailure() {
         var stream = new StringStream("HHHHH WWWWW");
         var parser = TerminalParsers.<String, Character>
-                run('W', () -> "Cannot Find Run of Character W");
+                run('W', () -> "Cannot Find Run of Character W").get();
         var result = parser.parse(stream);
 
         assertFalse(result.isSuccess());
@@ -241,7 +241,7 @@ public class TerminalTest {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
                 run(List.of('e', 'H', 'l', 'o'),
-                () -> "Cannot Find Run of Character Set");
+                () -> "Cannot Find Run of Character Set").get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -254,7 +254,7 @@ public class TerminalTest {
         var stream = new StringStream("Hello World");
         var parser = TerminalParsers.<String, Character>
                 run(List.of('d', 'l', 'o', 'r', 'W'),
-                () -> "Cannot Find Run of Character Set");
+                () -> "Cannot Find Run of Character Set").get();
         var result = parser.parse(stream);
 
         assertFalse(result.isSuccess());

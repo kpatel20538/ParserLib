@@ -1,20 +1,41 @@
 package io.kpatel.parsers.parsers;
 
 import io.kpatel.parsers.Parser;
-import io.kpatel.parsers.prebuilt.RepetitionParsers;
-import io.kpatel.parsers.prebuilt.TerminalParsers;
 import io.kpatel.parsers.stream.StringStream;
 import org.junit.Test;
 
+import java.util.function.Supplier;
+
+import static io.kpatel.parsers.prebuilt.RepetitionParsers.*;
+import static io.kpatel.parsers.prebuilt.TerminalParsers.sequence;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 public class RepetitionTest {
+    public Supplier<Parser<String, String, Character>> zeroOrMoreParser() {
+        return zeroOrMoreString(sequence("Hello ",
+                () -> "Can not find Hello"));
+    }
+
+    public Supplier<Parser<String, String, Character>> oneOrMoreParser() {
+        return oneOrMoreString(sequence("Hello ",
+                () -> "Can not find Hello"));
+    }
+
+    public Supplier<Parser<String, String, Character>> repeatParser() {
+        return repeatString(sequence("1 ",
+                () -> "Can not find 1"), 3);
+    }
+
+    public Supplier<Parser<String, String, Character>> rangedRepeatParser() {
+        return rangedRepeatString(sequence("1 ",
+                () -> "Can not find 1"), 2, 4);
+    }
+
     @Test
     public void testZeroOrMoreSuccess() {
         var stream = new StringStream("Hello Hello Hello ");
-        Parser<String, String, Character> parser = RepetitionParsers.zeroOrMoreString(
-                TerminalParsers.sequence("Hello ", () -> "Can not find Hello"));
+        var parser = zeroOrMoreParser().get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -25,8 +46,7 @@ public class RepetitionTest {
     @Test
     public void testZeroOrMoreFailure() {
         var stream = new StringStream("World World World ");
-        Parser<String, String, Character> parser = RepetitionParsers.zeroOrMoreString(
-                TerminalParsers.sequence("Hello ", () -> "Can not find Hello"));
+        var parser = zeroOrMoreParser().get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -37,8 +57,7 @@ public class RepetitionTest {
     @Test
     public void testOneOrMoreSuccess() {
         var stream = new StringStream("Hello Hello Hello ");
-        Parser<String, String, Character> parser = RepetitionParsers.oneOrMoreString(
-                TerminalParsers.sequence("Hello ", () -> "Can not find Hello"));
+        var parser = oneOrMoreParser().get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -49,8 +68,7 @@ public class RepetitionTest {
     @Test
     public void testOneOrMoreFailure() {
         var stream = new StringStream("World World World ");
-        Parser<String, String, Character> parser = RepetitionParsers.oneOrMoreString(
-                TerminalParsers.sequence("Hello ", () -> "Can not find Hello"));
+        var parser = oneOrMoreParser().get();
         var result = parser.parse(stream);
 
         assertFalse(result.isSuccess());
@@ -59,8 +77,7 @@ public class RepetitionTest {
     @Test
     public void testFixedRepetitionSuccess() {
         var stream = new StringStream("1 1 1 1 1 ");
-        Parser<String, String, Character> parser = RepetitionParsers.repeatString(
-                TerminalParsers.sequence("1 ", () -> "Can not find 1"), 3);
+        var parser = repeatParser().get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -71,8 +88,7 @@ public class RepetitionTest {
     @Test
     public void testFixedRepetitionFailure() {
         var stream = new StringStream("1 1 2 2 2 ");
-        Parser<String, String, Character> parser = RepetitionParsers.repeatString(
-                TerminalParsers.sequence("1 ", () -> "Can not find 1"), 3);
+        var parser = repeatParser().get();
         var result = parser.parse(stream);
 
         assertFalse(result.isSuccess());
@@ -81,8 +97,7 @@ public class RepetitionTest {
     @Test
     public void testRangedRepetitionSuccessInRange() {
         var stream = new StringStream("1 1 1 2 2 ");
-        Parser<String, String, Character> parser = RepetitionParsers.rangedRepeatString(
-                TerminalParsers.sequence("1 ", () -> "Can not find 1"), 2, 4);
+        var parser = rangedRepeatParser().get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -93,8 +108,7 @@ public class RepetitionTest {
     @Test
     public void testRangedRepetitionSuccessOutRange() {
         var stream = new StringStream("1 1 1 1 1 ");
-        Parser<String, String, Character> parser = RepetitionParsers.rangedRepeatString(
-                TerminalParsers.sequence("1 ", () -> "Can not find 1"), 2, 4);
+        var parser = rangedRepeatParser().get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -105,8 +119,7 @@ public class RepetitionTest {
     @Test
     public void testRangedRepetitionSuccessUpperEdge() {
         var stream = new StringStream("1 1 1 1 2 ");
-        Parser<String, String, Character> parser = RepetitionParsers.rangedRepeatString(
-                TerminalParsers.sequence("1 ", () -> "Can not find 1"), 2, 4);
+        var parser = rangedRepeatParser().get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -117,8 +130,7 @@ public class RepetitionTest {
     @Test
     public void testRangedRepetitionSuccessLowerEdge() {
         var stream = new StringStream("1 1 2 2 2 ");
-        Parser<String, String, Character> parser = RepetitionParsers.rangedRepeatString(
-                TerminalParsers.sequence("1 ", () -> "Can not find 1"), 2, 4);
+        var parser = rangedRepeatParser().get();
         var result = parser.parse(stream);
 
         var item = result.getOrThrow();
@@ -129,8 +141,7 @@ public class RepetitionTest {
     @Test
     public void testRangedRepetitionFailure() {
         var stream = new StringStream("1 2 2 2 2 ");
-        Parser<String, String, Character> parser = RepetitionParsers.rangedRepeatString(
-                TerminalParsers.sequence("1 ", () -> "Can not find 1"), 2, 4);
+        var parser = rangedRepeatParser().get();
         var result = parser.parse(stream);
 
         assertFalse(result.isSuccess());

@@ -13,7 +13,7 @@ public class StringTest {
     @Test
     public void testEndOfFileSuccess() {
         var stream = new StringStream("Hello World").jump(200);
-        var result = endOfFile().parse(stream);
+        var result = endOfFile().get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -23,7 +23,7 @@ public class StringTest {
     @Test
     public void testEndOfFileFailure() {
         var stream = new StringStream("Hello World");
-        var result = endOfFile().parse(stream);
+        var result = endOfFile().get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
@@ -31,7 +31,7 @@ public class StringTest {
     @Test
     public void testEndOfLineSuccessLineEndLineFeed() {
         var stream = new StringStream("\n\rHello World");
-        var result = prefix(endOfLine(), letter()).parse(stream);
+        var result = prefix(endOfLine(), letter()).get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -41,7 +41,7 @@ public class StringTest {
     @Test
     public void testEndOfLineSuccessLineEnd() {
         var stream = new StringStream("\nHello World");
-        var result = prefix(endOfLine(), letter()).parse(stream);
+        var result = prefix(endOfLine(), letter()).get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -51,7 +51,7 @@ public class StringTest {
     @Test
     public void testEndOfLineSuccessLineFeed() {
         var stream = new StringStream("\rHello World");
-        var result = prefix(endOfLine(), letter()).parse(stream);
+        var result = prefix(endOfLine(), letter()).get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -61,7 +61,7 @@ public class StringTest {
     @Test
     public void testEndOfLineSuccessFileEnd() {
         var stream = new StringStream("Hello World").jump(200);
-        var result = endOfLine().parse(stream);
+        var result = endOfLine().get().parse(stream);
 
         assertTrue(result.isSuccess());
     }
@@ -69,7 +69,7 @@ public class StringTest {
     @Test
     public void testEndOfLineFailure() {
         var stream = new StringStream("Hello World");
-        var result = endOfLine().parse(stream);
+        var result = endOfLine().get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
@@ -77,7 +77,7 @@ public class StringTest {
     @Test
     public void testWordSuccessBoundary() {
         var stream = new StringStream("Hello World");
-        var result = term("Hello").parse(stream);
+        var result = term("Hello").get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -87,7 +87,7 @@ public class StringTest {
     @Test
     public void testWordSuccessEndOfFile() {
         var stream = new StringStream("Hello");
-        var result = term("Hello").parse(stream);
+        var result = term("Hello").get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -97,7 +97,7 @@ public class StringTest {
     @Test
     public void testWordFailure() {
         var stream = new StringStream("Hello World");
-        var result = term("World").parse(stream);
+        var result = term("World").get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
@@ -105,7 +105,7 @@ public class StringTest {
     @Test
     public void testWordFailureLetter() {
         var stream = new StringStream("HelloWorld");
-        var result = term("Hello").parse(stream);
+        var result = term("Hello").get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
@@ -113,7 +113,7 @@ public class StringTest {
     @Test
     public void testWordFailureDigit() {
         var stream = new StringStream("Hello12345");
-        var result = term("Hello").parse(stream);
+        var result = term("Hello").get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
@@ -121,9 +121,7 @@ public class StringTest {
     @Test
     public void testKeywordSuccessBoundary() {
         var stream = new StringStream("Hello World");
-        var result = keywords(List.of(
-                "Hello", "World"
-        )).parse(stream);
+        var result = keywords(List.of("Hello", "World")).get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -133,9 +131,7 @@ public class StringTest {
     @Test
     public void testKeywordSuccessEndOfFile() {
         var stream = new StringStream("Hello");
-        var result = keywords(List.of(
-                "Hello", "World"
-        )).parse(stream);
+        var result = keywords(List.of("Hello", "World")).get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -145,9 +141,7 @@ public class StringTest {
     @Test
     public void testKeywordSuccessSecond() {
         var stream = new StringStream("World Hello");
-        var result = keywords(List.of(
-                "Hello", "World"
-        )).parse(stream);
+        var result = keywords(List.of("Hello", "World")).get().parse(stream);
 
         var item = result.getOrThrow();
 
@@ -157,9 +151,7 @@ public class StringTest {
     @Test
     public void testKeywordFailure() {
         var stream = new StringStream("HelloWorld");
-        var result = keywords(List.of(
-                "Hello", "World"
-        )).parse(stream);
+        var result = keywords(List.of("Hello", "World")).get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
@@ -167,9 +159,7 @@ public class StringTest {
     @Test
     public void testKeywordFailureLetter() {
         var stream = new StringStream("HelloWorld");
-        var result = keywords(List.of(
-                "Hello", "World"
-        )).parse(stream);
+        var result = keywords(List.of("Hello", "World")).get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
@@ -177,9 +167,7 @@ public class StringTest {
     @Test
     public void testKeywordFailureDigit() {
         var stream = new StringStream("Hello12345");
-        var result = keywords(List.of(
-                "Hello", "World"
-        )).parse(stream);
+        var result = keywords(List.of("Hello", "World")).get().parse(stream);
 
         assertFalse(result.isSuccess());
     }
