@@ -90,7 +90,7 @@ public interface ParserStream<Seq, Itm> {
      * - Should the requested jump exceed the Number of Items in the stream,
      *   return a ParserStream representing an empty Stream.
      * - Negative Jump Requests are floored to 0
-     * - may only return self is n <= 0
+     * - may only return self is on zero an negative jumps
      * RECOMMENDATION:
      * - When Implementing, Consider Updating any debugging information here.
      */
